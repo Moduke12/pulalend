@@ -1,0 +1,107 @@
+@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Unbounded:wght@500;700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --primary-blue: #1E73D8;
+  --growth-green: #38A34A;
+  --accent-orange: #F28C28;
+  --deep-navy: #0B2242;
+  --sky-ice: #DDEEFF;
+  --ocean-mist: #B7D6FF;
+  --solar-gold: #F6B24B;
+  --night-ink: #08162B;
+}
+
+body {
+  font-family: 'Space Grotesk', 'Segoe UI', system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+.font-display {
+  font-family: 'Unbounded', 'Space Grotesk', system-ui, sans-serif;
+  letter-spacing: -0.02em;
+}
+
+.bg-atmosphere {
+  background-image:
+    radial-gradient(circle at 12% 20%, rgba(246, 178, 75, 0.25), transparent 45%),
+    radial-gradient(circle at 82% 15%, rgba(30, 115, 216, 0.35), transparent 40%),
+    radial-gradient(circle at 20% 80%, rgba(56, 163, 74, 0.2), transparent 45%),
+    linear-gradient(140deg, #f7fbff 0%, #e6f1ff 40%, #d9e9ff 100%);
+}
+
+.bg-home-ambient {
+  background-image:
+    radial-gradient(circle at 10% 10%, rgba(242, 140, 40, 0.28), transparent 40%),
+    radial-gradient(circle at 90% 12%, rgba(11, 34, 66, 0.3), transparent 45%),
+    radial-gradient(circle at 15% 85%, rgba(56, 163, 74, 0.22), transparent 45%),
+    linear-gradient(135deg, #fdf7f2 0%, #eff6ff 45%, #e2f1ff 100%);
+}
+
+.hero-surface {
+  background: rgba(255, 255, 255, 0.75);
+  border: 1px solid rgba(8, 22, 43, 0.08);
+  box-shadow: 0 30px 80px rgba(8, 22, 43, 0.12);
+  backdrop-filter: blur(18px);
+}
+
+.chatbot-surface {
+  background: rgba(255, 255, 255, 0.9);
+  border: 1px solid rgba(8, 22, 43, 0.1);
+  box-shadow: 0 24px 60px rgba(8, 22, 43, 0.15);
+  backdrop-filter: blur(12px);
+}
+
+.glow-ring {
+  box-shadow: 0 0 0 10px rgba(30, 115, 216, 0.08), 0 0 0 28px rgba(30, 115, 216, 0.04);
+}
+
+.float-slow {
+  animation: float-slow 8s ease-in-out infinite;
+}
+
+.fade-up {
+  animation: fade-up 0.6s ease both;
+}
+
+.stagger > * {
+  animation: fade-up 0.7s ease both;
+}
+
+.stagger > *:nth-child(1) { animation-delay: 0.05s; }
+.stagger > *:nth-child(2) { animation-delay: 0.15s; }
+.stagger > *:nth-child(3) { animation-delay: 0.25s; }
+.stagger > *:nth-child(4) { animation-delay: 0.35s; }
+
+@keyframes fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes float-slow {
+  0% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+  100% {
+    transform: translateY(0);
+  }
+}
+
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+}
