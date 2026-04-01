@@ -69,7 +69,7 @@ export async function PUT(request: NextRequest) {
     }
 
     // Validate inputs
-    const updates: any = {};
+    const updates: Record<string, number> = {};
     const errors: string[] = [];
 
     if (preferredInterestRate !== undefined) {
@@ -121,7 +121,7 @@ export async function PUT(request: NextRequest) {
     const setClause = Object.keys(updates)
       .map((key) => `${key} = ?`)
       .join(", ");
-    const values = [...Object.values(updates), lenderId];
+    const values: number[] = [...Object.values(updates), lenderId];
 
     await pool.execute(
       `UPDATE lender_profiles SET ${setClause} WHERE user_id = ?`,
