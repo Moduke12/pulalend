@@ -3,11 +3,11 @@ import Link from "next/link";
 
 export default function HomePage() {
   return (
-    <div className="min-h-screen bg-home-ambient text-navy-deep">
+    <div className="min-h-screen bg-hero-deck text-navy-deep">
       <div className="relative overflow-hidden">
-        <div className="absolute -top-24 -left-28 w-72 h-72 rounded-full bg-accent-orange/30 blur-3xl" />
-        <div className="absolute top-12 -right-16 w-80 h-80 rounded-full bg-primary-blue/25 blur-3xl" />
-        <div className="absolute bottom-0 right-20 w-64 h-64 rounded-full bg-growth-green/20 blur-3xl" />
+        <div className="absolute -top-28 -left-32 w-96 h-96 rounded-full bg-accent-orange/45 blur-3xl" />
+        <div className="absolute top-6 -right-24 w-[26rem] h-[26rem] rounded-full bg-primary-blue/35 blur-3xl float-slow" />
+        <div className="absolute bottom-0 right-10 w-80 h-80 rounded-full bg-growth-green/28 blur-3xl float-delay" />
 
         <nav className="relative z-10">
           <div className="container mx-auto px-4 py-6 flex items-center justify-between">
@@ -40,68 +40,66 @@ export default function HomePage() {
         <main className="container mx-auto px-4 py-16 relative z-10">
           <div className="grid lg:grid-cols-[1.1fr_0.9fr] gap-12 items-center">
             <div className="space-y-8 fade-up">
-              <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/80 hero-surface text-sm text-navy-deep">
-                Smart lending for founders, traders, and funders
+              <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/85 hero-surface text-sm text-navy-deep surface-tint-orange">
+                Where big banks fail, Pulalend delivers.
               </div>
               <h1 className="font-display text-4xl md:text-6xl text-navy-deep">
-                Where bold businesses meet confident capital.
+                Get same-day approval for borrower funding up to P10k.
               </h1>
               <p className="text-lg text-navy-deep/80 max-w-xl">
-                Pulalend matches vetted borrowers with mission-aligned lenders. Launch funding requests, track approvals,
-                and build a portfolio with clarity and control.
+                Move fast with verified lenders and a streamlined approval process. Apply in minutes, track your status,
+                and fund your growth without the usual paperwork drag.
               </p>
               <div className="flex flex-wrap gap-4">
                 <Link
                   href="/register?type=borrower"
                   className="px-6 py-3 bg-gradient-to-r from-[#1E73D8] to-[#38A34A] text-white rounded-full hover:from-[#0B2242] hover:to-[#1E73D8] transition"
                 >
-                  I Need Funding
+                  Get Approved Now
                 </Link>
                 <Link
                   href="/register?type=lender"
                   className="px-6 py-3 border border-navy-deep/20 rounded-full text-navy-deep hover:bg-white/80 transition"
                 >
-                  I Want to Lend
+                  See Investment Deals
                 </Link>
               </div>
-              <div className="flex items-center gap-6 text-sm text-navy-deep/70">
-                <div className="flex items-center gap-2">
-                  <span className="w-2 h-2 rounded-full bg-growth-green" />
-                  Verified profiles
-                </div>
-                <div className="flex items-center gap-2">
-                  <span className="w-2 h-2 rounded-full bg-accent-orange" />
-                  Transparent terms
-                </div>
-                <div className="flex items-center gap-2">
-                  <span className="w-2 h-2 rounded-full bg-primary-blue" />
-                  Smart repayments
-                </div>
+              <div className="grid sm:grid-cols-3 gap-4">
+                {[
+                  { label: "Avg. approval", value: "48 hrs", tint: "surface-tint-blue" },
+                  { label: "Funding range", value: "P1k-P10k", tint: "surface-tint-orange" },
+                  { label: "Live lender pool", value: "1,200+", tint: "surface-tint-green" },
+                ].map((stat) => (
+                  <div key={stat.label} className={`rounded-2xl p-4 hero-surface ${stat.tint}`}>
+                    <div className="text-xs uppercase tracking-wide text-navy-deep/60">{stat.label}</div>
+                    <div className="font-display text-xl text-navy-deep">{stat.value}</div>
+                  </div>
+                ))}
               </div>
             </div>
 
-            <div className="relative">
-              <div className="hero-surface rounded-3xl p-6 grid gap-4 float-slow">
+            <div className="relative fade-up-long">
+              <div className="hero-surface rounded-3xl p-6 grid gap-4 float-slow shimmer-overlay relative overflow-hidden">
                 <div className="flex items-center justify-between">
                   <div>
                     <div className="text-sm text-navy-deep/60">Brand suite</div>
                     <div className="font-display text-xl text-navy-deep">Pulalend Visuals</div>
                   </div>
-                  <div className="w-10 h-10 rounded-full bg-primary-blue/10 glow-ring" />
+                  <div className="w-10 h-10 rounded-full bg-primary-blue/10 glow-ring glow-pulse" />
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div className="bg-white rounded-2xl p-3 shadow-lg">
-                    <Image src="/logo1.jpeg" alt="Pulalend logo horizontal" width={240} height={120} className="rounded-xl" />
+                    <Image src="/logo1.jpeg" alt="Pulalend logo horizontal" width={150} height={75} className="rounded-xl" />
                   </div>
                   <div className="bg-white rounded-2xl p-3 shadow-lg">
-                    <Image src="/logo2.jpeg" alt="Pulalend icon" width={240} height={120} className="rounded-xl" />
+                    <Image src="/logo2.jpeg" alt="Pulalend icon" width={150} height={75} className="rounded-xl" />
                   </div>
                 </div>
                 <div className="bg-white rounded-2xl p-4 shadow-lg">
-                  <Image src="/logo3.jpeg" alt="Pulalend app badge" width={520} height={240} className="rounded-xl" />
+                  <Image src="/logo3.jpeg" alt="Pulalend app badge" width={340} height={170} className="rounded-xl" />
                 </div>
               </div>
-              <div className="absolute -bottom-8 -left-6 bg-white/85 hero-surface rounded-2xl px-5 py-4">
+              <div className="absolute -bottom-8 -left-6 bg-white/85 hero-surface rounded-2xl px-5 py-4 float-delay">
                 <div className="text-xs uppercase tracking-wide text-navy-deep/60">Approval speed</div>
                 <div className="font-display text-2xl text-navy-deep">48 hrs</div>
               </div>
@@ -110,78 +108,110 @@ export default function HomePage() {
         </main>
       </div>
 
-      <section className="container mx-auto px-4 py-10">
-        <div className="hero-surface rounded-3xl p-8 grid md:grid-cols-3 gap-6 stagger">
-          {[
-            {
-              title: "Borrower Onboarding",
-              text: "KYC-ready profiles, clean documents, and guided loan requests.",
-            },
-            {
-              title: "Lender Matching",
-              text: "Browse vetted opportunities, fund partially, and track expected returns.",
-            },
-            {
-              title: "Transparent Repayments",
-              text: "Clear schedules, automatic status updates, and shared visibility.",
-            },
-          ].map((item) => (
-            <div key={item.title} className="bg-white rounded-2xl p-6 shadow-sm border border-navy-deep/5">
-              <div className="font-display text-lg text-navy-deep mb-2">{item.title}</div>
-              <p className="text-navy-deep/70 text-sm">{item.text}</p>
+      <section className="bg-deep-band text-white py-16">
+        <div className="container mx-auto px-4">
+          <div className="grid lg:grid-cols-[0.9fr_1.1fr] gap-10 items-start">
+            <div className="space-y-6 fade-up">
+              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/15 text-xs uppercase tracking-wide">
+                How to get your funds
+              </div>
+              <h2 className="font-display text-3xl md:text-4xl">A fast track from application to funding.</h2>
+              <p className="text-white/75">
+                We verify borrower profiles fast so lenders can commit quickly. Three guided steps keep everything clear.
+              </p>
+              <Link
+                href="/register?type=borrower"
+                className="inline-flex px-6 py-3 bg-white text-navy-deep rounded-full hover:bg-slate-100 transition"
+              >
+                Start Application
+              </Link>
             </div>
-          ))}
+            <div className="grid md:grid-cols-3 gap-4 stagger">
+              {[
+                {
+                  step: "1",
+                  title: "Get Approved",
+                  items: ["Create a secure account", "Submit your application", "Wait 4-5 minutes for review"],
+                },
+                {
+                  step: "2",
+                  title: "Choose Your Product",
+                  items: ["Pick your funding amount", "Review and sign terms", "Connect your bank securely"],
+                },
+                {
+                  step: "3",
+                  title: "Get Funded",
+                  items: ["Upload closing documents", "Confirm with your loan expert", "Receive funds fast"],
+                },
+              ].map((card) => (
+                <div key={card.step} className="rounded-2xl p-6 bg-white/10 border border-white/15">
+                  <div className="text-4xl font-display text-white/70">{card.step}</div>
+                  <div className="font-display text-lg mt-2">{card.title}</div>
+                  <ul className="text-sm text-white/75 mt-3 space-y-2">
+                    {card.items.map((item) => (
+                      <li key={item} className="flex gap-2">
+                        <span className="text-accent-orange">•</span>
+                        {item}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              ))}
+            </div>
+          </div>
         </div>
       </section>
 
-      <section className="container mx-auto px-4 pb-10">
-        <div className="hero-surface rounded-3xl p-8 grid lg:grid-cols-[1.1fr_0.9fr] gap-8 items-center">
-          <div className="space-y-6">
-            <div className="font-display text-3xl text-navy-deep">
-              Pay On Time, Build a Stronger Relationship.
-            </div>
+      <section className="container mx-auto px-4 py-14">
+        <div className="grid lg:grid-cols-[1.1fr_0.9fr] gap-10 items-center">
+          <div className="space-y-5">
+            <div className="font-display text-3xl text-navy-deep">Lending and borrowing power new possibilities.</div>
             <p className="text-navy-deep/70">
-              When you repay on time, you grow with Pulalend. Let’s keep the trust strong and unlock even more
-              opportunities together.
+              A rising tide lifts all boats. Use Pulalend to accelerate the next chapter for lending and borrowing.
             </p>
-            <div className="space-y-4">
+            <div className="flex flex-wrap gap-3">
               {[
-                {
-                  title: "Builds Trust",
-                  text: "Strengthens our relationship and keeps you in good standing.",
-                },
-                {
-                  title: "Opens More Opportunities",
-                  text: "Enjoy higher limits and access to faster future funding.",
-                },
-                {
-                  title: "Peace of Mind",
-                  text: "Stay stress-free with a positive repayment record.",
-                },
+                "Borrower Growth",
+                "Debt Consolidation",
+                "Inventory Purchase",
+                "Invoice Fulfillment",
+                "Working Capital",
+                "Equipment Purchase",
+                "Payroll Processing",
+                "Unexpected Bills",
               ].map((item) => (
-                <div key={item.title} className="flex gap-4 items-start">
-                  <div className="w-10 h-10 rounded-full bg-primary-blue/10 flex items-center justify-center text-primary-blue font-bold">
-                    ✓
+                <span key={item} className="px-4 py-2 rounded-full accent-chip text-sm text-navy-deep">
+                  {item}
+                </span>
+              ))}
+            </div>
+            <Link
+              href="/register?type=borrower"
+              className="inline-flex px-6 py-3 bg-gradient-to-r from-[#F28C28] to-[#F6B24B] text-white rounded-full hover:from-[#e07a18] hover:to-[#F28C28] transition"
+            >
+              See Lending & Borrowing Options
+            </Link>
+          </div>
+          <div className="hero-surface rounded-3xl p-6 surface-tint-blue">
+            <div className="text-sm text-navy-deep/60">Live lending/borrowing dashboard</div>
+            <div className="font-display text-2xl text-navy-deep">Borrowing momentum</div>
+            <div className="mt-6 space-y-4">
+              {[
+                { label: "Retail expansion", value: "P2.2k", pct: "64%" },
+                { label: "Manufacturing run", value: "P4.8k", pct: "82%" },
+                { label: "Construction payroll", value: "P3.1k", pct: "58%" },
+              ].map((item) => (
+                <div key={item.label} className="bg-white/90 rounded-2xl p-4 shadow-sm">
+                  <div className="flex items-center justify-between text-sm text-navy-deep/70">
+                    <span>{item.label}</span>
+                    <span className="font-semibold text-navy-deep">{item.value}</span>
                   </div>
-                  <div>
-                    <div className="font-display text-lg text-navy-deep">{item.title}</div>
-                    <div className="text-sm text-navy-deep/70">{item.text}</div>
+                  <div className="mt-3 h-2 rounded-full bg-navy-deep/10 overflow-hidden">
+                    <div className="h-full bg-gradient-to-r from-[#1E73D8] to-[#38A34A]" style={{ width: item.pct }} />
                   </div>
                 </div>
               ))}
             </div>
-            <div className="inline-flex items-center gap-3 px-4 py-2 rounded-full bg-white/70 hero-surface text-sm text-navy-deep">
-              Together we grow, with trust and commitment.
-            </div>
-          </div>
-          <div className="bg-white/80 hero-surface rounded-2xl p-4">
-            <Image
-              src="/pay-on-time.jpeg"
-              alt="Pulalend repayment awareness poster"
-              width={520}
-              height={700}
-              className="rounded-2xl"
-            />
           </div>
         </div>
       </section>
@@ -189,19 +219,26 @@ export default function HomePage() {
       <section className="container mx-auto px-4 pb-12">
         <div className="grid lg:grid-cols-[1fr_1fr] gap-10 items-center">
           <div className="space-y-5">
-            <div className="font-display text-3xl text-navy-deep">A platform built for growth with guardrails.</div>
+            <div className="font-display text-3xl text-navy-deep">Relationships matter.</div>
             <p className="text-navy-deep/70">
-              Every loan request is reviewed by admins before it enters the marketplace, creating trust for lenders and
-              predictable outcomes for borrowers.
+              Here is why borrowers and lenders return. Trust, transparency, and fast execution.
             </p>
-            <Link href="/register" className="inline-flex px-6 py-3 bg-gradient-to-r from-[#F28C28] to-[#F6B24B] text-white rounded-full hover:from-[#e07a18] hover:to-[#F28C28] transition">
-              Start Your Journey
+            <Link
+              href="/register"
+              className="inline-flex px-6 py-3 bg-gradient-to-r from-[#1E73D8] to-[#38A34A] text-white rounded-full hover:from-[#0B2242] hover:to-[#1E73D8] transition"
+            >
+              Join Pulalend
             </Link>
           </div>
-          <div className="grid grid-cols-3 gap-4">
-            {["/logo1.jpeg", "/logo2.jpeg", "/logo3.jpeg"].map((src) => (
-              <div key={src} className="bg-white/80 hero-surface rounded-2xl p-4 shadow-md">
-                <Image src={src} alt="Pulalend logo" width={240} height={160} className="rounded-xl" />
+          <div className="grid gap-4">
+            {[
+              "The Pulalend team delivered funding when we were under pressure.",
+              "Our lender matched us fast and kept terms transparent.",
+              "We made payroll on time because approvals were immediate.",
+            ].map((quote) => (
+              <div key={quote} className="bg-white/90 hero-surface rounded-2xl p-5 surface-tint-orange">
+                <div className="text-sm text-navy-deep/80">“{quote}”</div>
+                <div className="text-xs text-navy-deep/60 mt-3">Pulalend Customer</div>
               </div>
             ))}
           </div>
@@ -209,74 +246,50 @@ export default function HomePage() {
       </section>
 
       <section className="container mx-auto px-4 pb-16">
-        <div className="relative overflow-hidden rounded-3xl chatbot-surface p-8">
-          <div className="absolute -top-16 -right-10 w-48 h-48 rounded-full bg-accent-orange/20 blur-3xl" />
-          <div className="absolute bottom-0 -left-12 w-56 h-56 rounded-full bg-primary-blue/20 blur-3xl" />
-          <div className="grid lg:grid-cols-[0.9fr_1.1fr] gap-10 items-center relative z-10">
+        <div className="relative overflow-hidden rounded-3xl bg-cta-band text-white p-10">
+          <div className="grid lg:grid-cols-[1.1fr_0.9fr] gap-8 items-center">
             <div className="space-y-5">
-              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/70 text-xs text-navy-deep">
-                FAQ chatbot
-              </div>
-              <div className="font-display text-3xl text-navy-deep">Got questions? Ask the Pulalend assistant.</div>
-              <p className="text-navy-deep/70">
-                Skip the long FAQ list. Our chatbot answers lender, borrower, and KYC questions in seconds.
+              <div className="text-sm uppercase tracking-widest text-white/70">Apply now</div>
+              <div className="font-display text-3xl md:text-4xl">Get approved in minutes.</div>
+              <p className="text-white/75">
+                Join borrowers and lenders already growing with Pulalend. It only takes a few minutes to start.
               </p>
-              <div className="flex flex-wrap gap-3 text-xs text-navy-deep/70">
-                {["Loan approvals", "Repayment schedules", "KYC checks", "Investor returns"].map((chip) => (
-                  <span key={chip} className="px-3 py-1 rounded-full bg-white/80 border border-navy-deep/10">
-                    {chip}
-                  </span>
-                ))}
+              <div className="flex flex-wrap gap-3">
+                <Link
+                  href="/register?type=borrower"
+                  className="px-6 py-3 bg-white text-navy-deep rounded-full hover:bg-slate-100 transition"
+                >
+                  Apply for Funding
+                </Link>
+                <Link
+                  href="/register?type=lender"
+                  className="px-6 py-3 border border-white/40 rounded-full text-white hover:bg-white/10 transition"
+                >
+                  Become a Lender
+                </Link>
               </div>
             </div>
-            <div className="bg-white rounded-2xl border border-navy-deep/10 shadow-lg overflow-hidden">
-              <div className="px-5 py-4 border-b border-navy-deep/10 flex items-center justify-between">
-                <div>
-                  <div className="font-display text-lg text-navy-deep">Pulalend Chat</div>
-                  <div className="text-xs text-navy-deep/60">Always on, answers fast</div>
-                </div>
-                <span className="text-xs text-white bg-navy-deep px-2 py-1 rounded-full">Online</span>
-              </div>
-              <div className="px-5 py-4 space-y-4">
-                <div className="flex gap-3">
-                  <div className="w-9 h-9 rounded-full bg-primary-blue/10 text-primary-blue flex items-center justify-center font-bold">
-                    P
-                  </div>
-                  <div className="bg-slate-50 border border-slate-100 rounded-2xl px-4 py-3 text-sm text-navy-deep">
-                    Hi! Ask me about KYC, repayments, or how to pick the right lender.
-                  </div>
-                </div>
-                <div className="flex gap-3 justify-end">
-                  <div className="bg-primary-blue text-white rounded-2xl px-4 py-3 text-sm max-w-xs">
-                    How long does approval usually take?
-                  </div>
-                </div>
-                <div className="flex gap-3">
-                  <div className="w-9 h-9 rounded-full bg-accent-orange/20 text-accent-orange flex items-center justify-center font-bold">
-                    A
-                  </div>
-                  <div className="bg-slate-50 border border-slate-100 rounded-2xl px-4 py-3 text-sm text-navy-deep">
-                    Most requests are reviewed within 48 hours. You will see updates in your borrower dashboard.
-                  </div>
-                </div>
-              </div>
-              <div className="px-5 py-4 border-t border-navy-deep/10 bg-white">
-                <div className="flex items-center gap-3">
-                  <input
-                    className="flex-1 px-4 py-2 rounded-full border border-navy-deep/10 focus:outline-none focus:ring-2 focus:ring-primary-blue/40"
-                    placeholder="Type your question..."
-                  />
-                  <button className="px-4 py-2 bg-primary-blue text-white rounded-full hover:bg-navy-deep transition">
-                    Send
-                  </button>
-                </div>
+            <div className="hero-surface rounded-3xl p-6 surface-tint-orange text-navy-deep">
+              <div className="text-sm text-navy-deep/60">Stay in the know</div>
+              <div className="font-display text-2xl">Weekly funding intel</div>
+              <p className="text-sm text-navy-deep/70 mt-2">
+                Get new deals, repayment insights, and approval tips.
+              </p>
+              <div className="mt-4 flex flex-col sm:flex-row gap-3">
+                <input
+                  className="flex-1 px-4 py-2 rounded-full border border-navy-deep/20 focus:outline-none focus:ring-2 focus:ring-primary-blue/40"
+                  placeholder="Email address"
+                />
+                <button className="px-5 py-2 bg-navy-deep text-white rounded-full hover:bg-primary-blue transition">
+                  Subscribe
+                </button>
               </div>
             </div>
           </div>
         </div>
       </section>
 
-      <footer className="border-t border-navy-deep/10 bg-white/70">
+      <footer className="border-t border-navy-deep/10 bg-white/85 surface-tint-blue">
         <div className="container mx-auto px-4 py-8 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
           <div>
             <div className="font-display text-lg text-navy-deep">Pulalend</div>

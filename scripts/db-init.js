@@ -50,6 +50,7 @@ async function main() {
   const port = Number(env.DB_PORT || 3306);
   const user = env.DB_USER || "root";
   const password = env.DB_PASSWORD || "";
+  const database = env.DB_NAME || "pulalend";
 
   const schemaPath = path.join(process.cwd(), "database", "schema.sql");
   if (!fs.existsSync(schemaPath)) {
@@ -57,7 +58,26 @@ async function main() {
     process.exit(1);
   }
 
-  const sql = sanitizeSql(fs.readFileSync(schemaPath, "utf8"));
+  let sql = sanitizeSql(fs.readFileSync(schemaPath, "utf8"));
+  const dbSafe = String(database).replace(/`/g, "");
+  const createStmt = `CREATE DATABASE IF NOT EXISTS \`${dbSafe}\` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;`;
+  const useStmt = `USE \`${dbSafe}\`;`;
+
+  const hasCreate = /CREATE DATABASE IF NOT EXISTS/i.test(sql);
+  const hasUse = /USE\s+/i.test(sql);
+
+  if (hasCreate) {
+    sql = sql.replace(/CREATE DATABASE IF NOT EXISTS[^;]+;/i, createStmt);
+  }
+
+  if (hasUse) {
+    sql = sql.replace(/USE\s+[^;]+;/i, useStmt);
+  }
+
+  let prefix = "";
+  if (!hasCreate) prefix += `${createStmt}\n`;
+  if (!hasUse) prefix += `${useStmt}\n`;
+  if (prefix) sql = `${prefix}${sql}`;
 
   console.log("Connecting to MySQL...", { host, port, user });
   const connection = await mysql.createConnection({
