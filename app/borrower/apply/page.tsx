@@ -168,7 +168,7 @@ export default function BorrowerApplyPage() {
         return;
       }
       setSuccess(`Loan request submitted (ID: #${data.loanId}).`);
-      setForm({ amount: "", durationMonths: "6", purpose: "", notes: "" });
+      setForm({ amount: "", durationMonths: "6", purpose: "", notes: "", lenderIds: [] });
       setTimeout(() => router.push("/borrower/loans"), 900);
     } catch {
       setError("Network error. Please try again.");
