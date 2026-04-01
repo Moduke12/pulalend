@@ -62,7 +62,7 @@ export async function POST(request: NextRequest) {
     }
 
     const [fundedRows] = await pool.execute<RowDataPacket[]>(
-      "SELECT COALESCE(SUM(amount),0) AS fundedAmount FROM investments WHERE loan_id = ?",
+      "SELECT COALESCE(SUM(amount - platform_commission),0) AS fundedAmount FROM investments WHERE loan_id = ?",
       [loanRequestId]
     );
 
@@ -72,15 +72,21 @@ export async function POST(request: NextRequest) {
 
     if (investAmount > remaining) {
       return NextResponse.json(
-        { error: `Amount exceeds remaining funding ($${remaining.toFixed(2)})` },
+        { error: `Amount exceeds remaining funding (P${remaining.toFixed(2)})` },
         { status: 400 }
       );
     }
 
+    // Platform takes 2% commission from each lender investment.
+    const commissionRate = 0.02;
+    const platformCommission = investAmount * commissionRate;
+    const netInvestAmount = investAmount - platformCommission;
+
     // Expected return for this investment (simple interest for v1)
     const durationMonths = Number(loan.durationMonths);
     const interestRate = Number(loan.interestRate);
-    const expectedReturn = investAmount + investAmount * (interestRate / 100) * (durationMonths / 12);
+    const expectedReturn =
+      netInvestAmount + netInvestAmount * (interestRate / 100) * (durationMonths / 12);
 
     // Write investment + transaction
     const conn = await pool.getConnection();
@@ -88,9 +94,9 @@ export async function POST(request: NextRequest) {
       await conn.beginTransaction();
 
       const [invResult] = await conn.execute(
-        `INSERT INTO investments (lender_id, loan_id, amount, expected_return, actual_return, status)
-         VALUES (?, ?, ?, ?, 0, 'active')`,
-        [lenderId, loanRequestId, investAmount, expectedReturn]
+        `INSERT INTO investments (lender_id, loan_id, amount, expected_return, actual_return, platform_commission, status)
+         VALUES (?, ?, ?, ?, 0, ?, 'active')`,
+        [lenderId, loanRequestId, investAmount, expectedReturn, platformCommission]
       );
 
       const investmentId = (invResult as any).insertId;
@@ -102,12 +108,12 @@ export async function POST(request: NextRequest) {
           lenderId,
           investAmount,
           investmentId,
-          `Investment in loan #${loanRequestId}`,
+          `Investment in loan #${loanRequestId} (2% platform fee: P${platformCommission.toFixed(2)})`,
         ]
       );
 
       // If fully funded: activate loan and generate repayment schedule
-      const newFunded = alreadyFunded + investAmount;
+      const newFunded = alreadyFunded + netInvestAmount;
       const fullyFunded = newFunded >= principal;
 
       if (fullyFunded) {
@@ -142,6 +148,8 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({
         success: true,
         fullyFunded,
+        platformCommission,
+        netInvestedAmount: netInvestAmount,
       });
     } catch (e) {
       await conn.rollback();

@@ -24,6 +24,15 @@ const navItems = [
     ),
   },
   {
+    label: "My Investments",
+    href: "/lender/investments",
+    icon: (
+      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+      </svg>
+    ),
+  },
+  {
     label: "Portfolio",
     href: "/lender/portfolio",
     icon: (
@@ -125,8 +134,8 @@ export default function LenderPortfolioPage() {
                     <tr key={i.id} className="border-t border-gray-50">
                       <td className="py-3 font-medium">#{i.id}</td>
                       <td className="py-3">#{i.loanId}</td>
-                      <td className="py-3">${Number(i.amount).toLocaleString()}</td>
-                      <td className="py-3">${Number(i.expectedReturn).toLocaleString()}</td>
+                      <td className="py-3">P{Number(i.amount).toLocaleString()}</td>
+                      <td className="py-3">P{Number(i.expectedReturn).toLocaleString()}</td>
                       <td className="py-3">
                         <span className="px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-700">
                           {i.loanStatus}

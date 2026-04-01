@@ -88,9 +88,27 @@ async function main() {
     multipleStatements: true,
   });
 
+  const ensureColumn = async (tableName, columnName, columnType) => {
+    const [rows] = await connection.query(
+      "SELECT 1 FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = ? AND TABLE_NAME = ? AND COLUMN_NAME = ? LIMIT 1",
+      [database, tableName, columnName]
+    );
+    if (Array.isArray(rows) && rows.length === 0) {
+      await connection.query(
+        `ALTER TABLE \`${tableName}\` ADD COLUMN \`${columnName}\` ${columnType}`
+      );
+    }
+  };
+
   try {
     console.log("Applying schema...", schemaPath);
     await connection.query(sql);
+    await ensureColumn("users", "permanent_address", "TEXT");
+    await ensureColumn("users", "current_address", "TEXT");
+    await ensureColumn("kyc_requests", "omang_copy_path", "VARCHAR(500)");
+    await ensureColumn("kyc_requests", "payslip_path", "VARCHAR(500)");
+    await ensureColumn("kyc_requests", "rejection_reason", "TEXT");
+    await ensureColumn("loan_requests", "loan_number", "VARCHAR(50) UNIQUE");
     console.log("Done. Database and tables are ready.");
     console.log("Seeded admin:");
     console.log("  email: admin@pulalend.com");

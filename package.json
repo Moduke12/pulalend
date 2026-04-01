@@ -8,7 +8,8 @@
     "start": "next start",
     "lint": "next lint",
     "db:init": "node scripts/db-init.js",
-    "db:seed": "node scripts/db-seed-sample.js"
+    "db:seed": "node scripts/db-seed-sample.js",
+    "db:clear": "node scripts/db-clear-data.js"
   },
   "dependencies": {
     "next": "^15.1.4",

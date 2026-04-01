@@ -6,13 +6,15 @@ CREATE DATABASE IF NOT EXISTS pulalend CHARACTER SET utf8mb4 COLLATE utf8mb4_uni
 USE pulalend;
 
 -- Users table (for both borrowers and lenders)
-CREATE TABLE users (
+CREATE TABLE IF NOT EXISTS users (
     id INT AUTO_INCREMENT PRIMARY KEY,
     email VARCHAR(255) UNIQUE NOT NULL,
     password_hash VARCHAR(255) NOT NULL,
     first_name VARCHAR(100) NOT NULL,
     last_name VARCHAR(100) NOT NULL,
     phone VARCHAR(20),
+    permanent_address TEXT,
+    current_address TEXT,
     user_type ENUM('borrower', 'lender', 'admin') NOT NULL,
     status ENUM('active', 'inactive', 'suspended') DEFAULT 'active',
     email_verified BOOLEAN DEFAULT FALSE,
@@ -23,7 +25,7 @@ CREATE TABLE users (
 ) ENGINE=InnoDB;
 
 -- Borrower profiles
-CREATE TABLE borrower_profiles (
+CREATE TABLE IF NOT EXISTS borrower_profiles (
     id INT AUTO_INCREMENT PRIMARY KEY,
     user_id INT NOT NULL,
     business_name VARCHAR(255),
@@ -40,12 +42,15 @@ CREATE TABLE borrower_profiles (
 ) ENGINE=InnoDB;
 
 -- Lender profiles
-CREATE TABLE lender_profiles (
+CREATE TABLE IF NOT EXISTS lender_profiles (
     id INT AUTO_INCREMENT PRIMARY KEY,
     user_id INT NOT NULL,
     available_balance DECIMAL(15, 2) DEFAULT 0.00,
     total_invested DECIMAL(15, 2) DEFAULT 0.00,
     total_earned DECIMAL(15, 2) DEFAULT 0.00,
+    preferred_interest_rate DECIMAL(5, 2) DEFAULT 12.00,
+    min_loan_amount DECIMAL(15, 2) DEFAULT 1000.00,
+    max_loan_amount DECIMAL(15, 2) DEFAULT 50000.00,
     verified BOOLEAN DEFAULT FALSE,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
@@ -53,8 +58,9 @@ CREATE TABLE lender_profiles (
 ) ENGINE=InnoDB;
 
 -- Loan requests
-CREATE TABLE loan_requests (
+CREATE TABLE IF NOT EXISTS loan_requests (
     id INT AUTO_INCREMENT PRIMARY KEY,
+    loan_number VARCHAR(50) UNIQUE,
     borrower_id INT NOT NULL,
     amount DECIMAL(15, 2) NOT NULL,
     interest_rate DECIMAL(5, 2) NOT NULL,
@@ -72,7 +78,7 @@ CREATE TABLE loan_requests (
 ) ENGINE=InnoDB;
 
 -- Borrower-selected lenders for a loan request
-CREATE TABLE loan_lender_selections (
+CREATE TABLE IF NOT EXISTS loan_lender_selections (
     id INT AUTO_INCREMENT PRIMARY KEY,
     loan_id INT NOT NULL,
     lender_id INT NOT NULL,
@@ -84,13 +90,14 @@ CREATE TABLE loan_lender_selections (
 ) ENGINE=InnoDB;
 
 -- Investments
-CREATE TABLE investments (
+CREATE TABLE IF NOT EXISTS investments (
     id INT AUTO_INCREMENT PRIMARY KEY,
     lender_id INT NOT NULL,
     loan_id INT NOT NULL,
     amount DECIMAL(15, 2) NOT NULL,
     expected_return DECIMAL(15, 2) NOT NULL,
     actual_return DECIMAL(15, 2) DEFAULT 0.00,
+    platform_commission DECIMAL(15, 2) DEFAULT 0.00 COMMENT 'Platform commission (2% of investment)',
     status ENUM('active', 'completed', 'defaulted') DEFAULT 'active',
     invested_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     completed_at TIMESTAMP NULL,
@@ -101,7 +108,7 @@ CREATE TABLE investments (
 ) ENGINE=InnoDB;
 
 -- Repayment schedules
-CREATE TABLE repayment_schedules (
+CREATE TABLE IF NOT EXISTS repayment_schedules (
     id INT AUTO_INCREMENT PRIMARY KEY,
     loan_id INT NOT NULL,
     installment_number INT NOT NULL,
@@ -118,7 +125,7 @@ CREATE TABLE repayment_schedules (
 ) ENGINE=InnoDB;
 
 -- Transactions
-CREATE TABLE transactions (
+CREATE TABLE IF NOT EXISTS transactions (
     id INT AUTO_INCREMENT PRIMARY KEY,
     user_id INT NOT NULL,
     transaction_type ENUM('deposit', 'withdrawal', 'investment', 'repayment', 'return') NOT NULL,
@@ -133,7 +140,7 @@ CREATE TABLE transactions (
 ) ENGINE=InnoDB;
 
 -- Documents
-CREATE TABLE documents (
+CREATE TABLE IF NOT EXISTS documents (
     id INT AUTO_INCREMENT PRIMARY KEY,
     user_id INT NOT NULL,
     document_type ENUM('id_card', 'business_registration', 'bank_statement', 'tax_return', 'other') NOT NULL,
@@ -146,7 +153,7 @@ CREATE TABLE documents (
 ) ENGINE=InnoDB;
 
 -- KYC requests
-CREATE TABLE kyc_requests (
+CREATE TABLE IF NOT EXISTS kyc_requests (
     id INT AUTO_INCREMENT PRIMARY KEY,
     user_id INT NOT NULL,
     id_type VARCHAR(50) NOT NULL,
@@ -158,7 +165,10 @@ CREATE TABLE kyc_requests (
     id_front_path VARCHAR(500) NOT NULL,
     id_back_path VARCHAR(500),
     selfie_path VARCHAR(500) NOT NULL,
-    status ENUM('pending', 'approved', 'rejected') DEFAULT 'pending',
+    omang_copy_path VARCHAR(500),
+    payslip_path VARCHAR(500),
+    status ENUM('pending', 'approved', 'rejected', 'verified') DEFAULT 'pending',
+    rejection_reason TEXT,
     submitted_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     reviewed_at TIMESTAMP NULL,
     reviewer_id INT NULL,
@@ -169,7 +179,7 @@ CREATE TABLE kyc_requests (
 ) ENGINE=InnoDB;
 
 -- Notifications
-CREATE TABLE notifications (
+CREATE TABLE IF NOT EXISTS notifications (
     id INT AUTO_INCREMENT PRIMARY KEY,
     user_id INT NOT NULL,
     title VARCHAR(255) NOT NULL,
@@ -180,6 +190,19 @@ CREATE TABLE notifications (
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
     INDEX idx_user_read (user_id, read_status)
 ) ENGINE=InnoDB;
+
+-- Platform statistics
+CREATE TABLE IF NOT EXISTS platform_stats (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    total_commission_earned DECIMAL(15, 2) DEFAULT 0.00,
+    total_loans_funded DECIMAL(15, 2) DEFAULT 0.00,
+    total_active_loans INT DEFAULT 0,
+    last_updated TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+) ENGINE=InnoDB;
+
+-- Insert initial platform stats
+INSERT IGNORE INTO platform_stats (total_commission_earned, total_loans_funded, total_active_loans) 
+VALUES (0.00, 0.00, 0);
 
 -- Insert default admin user (password: admin123)
 INSERT IGNORE INTO users (email, password_hash, first_name, last_name, user_type, email_verified) 

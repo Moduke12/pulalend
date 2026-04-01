@@ -24,6 +24,15 @@ const navItems = [
     ),
   },
   {
+    label: "My Investments",
+    href: "/lender/investments",
+    icon: (
+      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+      </svg>
+    ),
+  },
+  {
     label: "Portfolio",
     href: "/lender/portfolio",
     icon: (
@@ -57,8 +66,13 @@ export default function LenderProfilePage() {
   const [user, setUser] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [addingFunds, setAddingFunds] = useState(false);
+  const [updatingPreferences, setUpdatingPreferences] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
+  const [preferences, setPreferences] = useState<any>(null);
+  const [fundAmount, setFundAmount] = useState("");
+  const [paymentMethod, setPaymentMethod] = useState("bank_transfer");
 
   useEffect(() => {
     const userData = localStorage.getItem("user");
@@ -72,23 +86,34 @@ export default function LenderProfilePage() {
       return;
     }
     setUser(parsed);
-    load(parsed.id);
+    loadData(parsed.id);
   }, [router]);
 
-  const load = async (userId: number) => {
+  const loadData = async (userId: number) => {
     setLoading(true);
     try {
-      const res = await fetch(`/api/profile?userId=${userId}`);
-      const data = await res.json();
-      if (res.ok) {
-        setUser((u: any) => ({ ...u, ...data.user }));
+      // Load profile and preferences in parallel
+      const [profileRes, prefsRes] = await Promise.all([
+        fetch(`/api/profile?userId=${userId}`),
+        fetch(`/api/lender/preferences?userId=${userId}`)
+      ]);
+
+      const profileData = await profileRes.json();
+      const prefsData = await prefsRes.json();
+
+      if (profileRes.ok) {
+        setUser((u: any) => ({ ...u, ...profileData.user }));
+      }
+
+      if (prefsRes.ok) {
+        setPreferences(prefsData.preferences);
       }
     } finally {
       setLoading(false);
     }
   };
 
-  const save = async (e: React.FormEvent) => {
+  const saveProfile = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
     setSuccess("");
@@ -107,7 +132,7 @@ export default function LenderProfilePage() {
       });
       const data = await res.json();
       if (!res.ok) {
-        setError(data.error || "Failed to save");
+        setError(data.error || "Failed to save profile");
         return;
       }
 
@@ -121,7 +146,7 @@ export default function LenderProfilePage() {
         })
       );
 
-      setSuccess("Profile updated successfully.");
+      setSuccess("Profile updated successfully");
     } catch {
       setError("Network error");
     } finally {
@@ -129,29 +154,270 @@ export default function LenderProfilePage() {
     }
   };
 
+  const handleAddFunds = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError("");
+    setSuccess("");
+
+    const amount = Number(fundAmount);
+    if (!Number.isFinite(amount) || amount <= 0) {
+      setError("Please enter a valid amount");
+      return;
+    }
+
+    setAddingFunds(true);
+
+    try {
+      const res = await fetch("/api/lender/add-funds", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          userId: user.id,
+          amount,
+          paymentMethod,
+        }),
+      });
+
+      const data = await res.json();
+      if (!res.ok) {
+        setError(data.error || "Failed to add funds");
+        return;
+      }
+
+      setSuccess(`Successfully added P${amount.toLocaleString()} to your account`);
+      setFundAmount("");
+      
+      // Reload preferences to show updated balance
+      await loadData(user.id);
+    } catch {
+      setError("Network error");
+    } finally {
+      setAddingFunds(false);
+    }
+  };
+
+  const handleUpdatePreferences = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError("");
+    setSuccess("");
+    setUpdatingPreferences(true);
+
+    try {
+      const res = await fetch("/api/lender/preferences", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          userId: user.id,
+          preferredInterestRate: preferences.preferredInterestRate,
+          minLoanAmount: preferences.minLoanAmount,
+          maxLoanAmount: preferences.maxLoanAmount,
+        }),
+      });
+
+      const data = await res.json();
+      if (!res.ok) {
+        setError(data.error || "Failed to update preferences");
+        return;
+      }
+
+      setSuccess("Lending preferences updated successfully");
+    } catch {
+      setError("Network error");
+    } finally {
+      setUpdatingPreferences(false);
+    }
+  };
+
   if (!user) return null;
 
   return (
     <DashboardLayout userType="lender" navItems={navItems} title="Profile">
-      <div className="max-w-2xl">
-        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-          <h2 className="text-lg font-bold text-navy-deep mb-4">Your Details</h2>
+      <div className="max-w-4xl mx-auto space-y-6">
+        {/* Error/Success Messages */}
+        {error && (
+          <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg">
+            {error}
+          </div>
+        )}
+        {success && (
+          <div className="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-lg">
+            {success}
+          </div>
+        )}
 
-          {error && (
-            <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg mb-4">
-              {error}
+        {/* Account Balance Display */}
+        {preferences && (
+          <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+            <h2 className="text-lg font-bold text-navy-deep mb-4">Account Overview</h2>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="p-4 bg-blue-50 rounded-lg border border-blue-200">
+                <p className="text-sm text-gray-600 mb-1">Available Balance</p>
+                <p className="text-2xl font-bold text-blue-600">
+                  P{(preferences.availableBalance || 0).toLocaleString(undefined, {
+                    minimumFractionDigits: 2,
+                    maximumFractionDigits: 2
+                  })}
+                </p>
+              </div>
+              <div className="p-4 bg-purple-50 rounded-lg border border-purple-200">
+                <p className="text-sm text-gray-600 mb-1">Total Invested</p>
+                <p className="text-2xl font-bold text-purple-600">
+                  P{(preferences.totalInvested || 0).toLocaleString(undefined, {
+                    minimumFractionDigits: 2,
+                    maximumFractionDigits: 2
+                  })}
+                </p>
+              </div>
+              <div className="p-4 bg-green-50 rounded-lg border border-green-200">
+                <p className="text-sm text-gray-600 mb-1">Total Earned</p>
+                <p className="text-2xl font-bold text-green-600">
+                  P{(preferences.totalEarned || 0).toLocaleString(undefined, {
+                    minimumFractionDigits: 2,
+                    maximumFractionDigits: 2
+                  })}
+                </p>
+              </div>
             </div>
-          )}
-          {success && (
-            <div className="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-lg mb-4">
-              {success}
+          </div>
+        )}
+
+        {/* Add Funds Section */}
+        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+          <h2 className="text-lg font-bold text-navy-deep mb-4">Add Funds</h2>
+          <form onSubmit={handleAddFunds} className="space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Amount
+                </label>
+                <input
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  value={fundAmount}
+                  onChange={(e) => setFundAmount(e.target.value)}
+                  placeholder="Enter amount"
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-growth-green focus:border-transparent outline-none"
+                  required
+                  disabled={addingFunds}
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Payment Method
+                </label>
+                <select
+                  value={paymentMethod}
+                  onChange={(e) => setPaymentMethod(e.target.value)}
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-growth-green focus:border-transparent outline-none"
+                  disabled={addingFunds}
+                >
+                  <option value="bank_transfer">Bank Transfer</option>
+                  <option value="card">Credit/Debit Card</option>
+                  <option value="mobile_money">Mobile Money</option>
+                </select>
+              </div>
             </div>
-          )}
+            <button
+              type="submit"
+              className="px-6 py-3 bg-growth-green text-white rounded-lg font-semibold hover:bg-green-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
+              disabled={addingFunds || !fundAmount}
+            >
+              {addingFunds ? "Processing..." : "Add Funds"}
+            </button>
+          </form>
+        </div>
+
+        {/* Lending Preferences Section */}
+        {preferences && (
+          <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+            <h2 className="text-lg font-bold text-navy-deep mb-4">Lending Preferences</h2>
+            <form onSubmit={handleUpdatePreferences} className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Preferred Interest Rate (%)
+                  </label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    max="100"
+                    value={preferences.preferredInterestRate || ""}
+                    onChange={(e) => setPreferences({
+                      ...preferences,
+                      preferredInterestRate: Number(e.target.value)
+                    })}
+                    placeholder="e.g., 12.00"
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-growth-green focus:border-transparent outline-none"
+                    disabled={updatingPreferences}
+                  />
+                  <p className="text-xs text-gray-500 mt-1">
+                    Your preferred annual interest rate
+                  </p>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Minimum Loan Amount
+                  </label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    value={preferences.minLoanAmount || ""}
+                    onChange={(e) => setPreferences({
+                      ...preferences,
+                      minLoanAmount: Number(e.target.value)
+                    })}
+                    placeholder="e.g., 1000.00"
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-growth-green focus:border-transparent outline-none"
+                    disabled={updatingPreferences}
+                  />
+                  <p className="text-xs text-gray-500 mt-1">
+                    Smallest loan you'll fund
+                  </p>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Maximum Loan Amount
+                  </label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    value={preferences.maxLoanAmount || ""}
+                    onChange={(e) => setPreferences({
+                      ...preferences,
+                      maxLoanAmount: Number(e.target.value)
+                    })}
+                    placeholder="e.g., 50000.00"
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-growth-green focus:border-transparent outline-none"
+                    disabled={updatingPreferences}
+                  />
+                  <p className="text-xs text-gray-500 mt-1">
+                    Largest loan you'll fund
+                  </p>
+                </div>
+              </div>
+              <button
+                type="submit"
+                className="px-6 py-3 bg-growth-green text-white rounded-lg font-semibold hover:bg-green-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
+                disabled={updatingPreferences}
+              >
+                {updatingPreferences ? "Updating..." : "Update Preferences"}
+              </button>
+            </form>
+          </div>
+        )}
+
+        {/* Personal Information Section */}
+        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+          <h2 className="text-lg font-bold text-navy-deep mb-4">Personal Information</h2>
 
           {loading ? (
             <p className="text-gray-500">Loading...</p>
           ) : (
-            <form onSubmit={save} className="space-y-6">
+            <form onSubmit={saveProfile} className="space-y-6">
               <div className="grid md:grid-cols-2 gap-6">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">First Name</label>

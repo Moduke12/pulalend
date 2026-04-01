@@ -72,6 +72,8 @@ export async function POST(request: NextRequest) {
     const idFront = form.get("idFront");
     const idBack = form.get("idBack");
     const selfie = form.get("selfie");
+    const omangCopy = form.get("omangCopy");
+    const payslip = form.get("payslip");
 
     if (!Number.isFinite(userId)) {
       return NextResponse.json({ error: "Invalid userId" }, { status: 400 });
@@ -94,6 +96,8 @@ export async function POST(request: NextRequest) {
     const idFrontPath = await saveFile(idFront, userId, "id_front");
     const idBackPath = idBack instanceof File ? await saveFile(idBack, userId, "id_back") : null;
     const selfiePath = await saveFile(selfie, userId, "selfie");
+    const omangCopyPath = omangCopy instanceof File ? await saveFile(omangCopy, userId, "omang_copy") : null;
+    const payslipPath = payslip instanceof File ? await saveFile(payslip, userId, "payslip") : null;
 
     const [result] = await pool.execute(
       `INSERT INTO kyc_requests (
@@ -107,8 +111,10 @@ export async function POST(request: NextRequest) {
         id_front_path,
         id_back_path,
         selfie_path,
+        omang_copy_path,
+        payslip_path,
         status
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending')`,
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending')`,
       [
         userId,
         idType,
@@ -120,6 +126,8 @@ export async function POST(request: NextRequest) {
         idFrontPath,
         idBackPath,
         selfiePath,
+        omangCopyPath,
+        payslipPath,
       ]
     );
 

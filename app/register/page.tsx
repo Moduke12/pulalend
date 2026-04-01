@@ -15,6 +15,8 @@ function RegisterPageContent() {
     firstName: "",
     lastName: "",
     phone: "",
+    permanentAddress: "",
+    currentAddress: "",
   });
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
@@ -167,6 +169,34 @@ function RegisterPageContent() {
               onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
               className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-blue focus:border-transparent outline-none"
               placeholder="+1234567890"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Permanent Address
+            </label>
+            <input
+              type="text"
+              required
+              value={formData.permanentAddress}
+              onChange={(e) => setFormData({ ...formData, permanentAddress: e.target.value })}
+              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-blue focus:border-transparent outline-none"
+              placeholder="Plot, street, city"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Current Address
+            </label>
+            <input
+              type="text"
+              required
+              value={formData.currentAddress}
+              onChange={(e) => setFormData({ ...formData, currentAddress: e.target.value })}
+              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-blue focus:border-transparent outline-none"
+              placeholder="Plot, street, city"
             />
           </div>
 

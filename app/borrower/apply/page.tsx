@@ -69,7 +69,7 @@ export default function BorrowerApplyPage() {
   const [lenderLoading, setLenderLoading] = useState(true);
   const [form, setForm] = useState({
     amount: "",
-    durationMonths: "6",
+    durationMonths: "1",
     purpose: "",
     notes: "",
     lenderIds: [] as number[],
@@ -168,7 +168,7 @@ export default function BorrowerApplyPage() {
         return;
       }
       setSuccess(`Loan request submitted (ID: #${data.loanId}).`);
-      setForm({ amount: "", durationMonths: "6", purpose: "", notes: "", lenderIds: [] });
+      setForm({ amount: "", durationMonths: "1", purpose: "", notes: "", lenderIds: [] });
       setTimeout(() => router.push("/borrower/loans"), 900);
     } catch {
       setError("Network error. Please try again.");
@@ -217,9 +217,9 @@ export default function BorrowerApplyPage() {
                 onChange={(e) => setForm((f) => ({ ...f, durationMonths: e.target.value }))}
                 className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-blue focus:border-transparent outline-none bg-white"
               >
-                {[3, 6, 9, 12, 18, 24].map((m) => (
+                {[1, 2, 3, 4, 5, 6, 9, 12, 18, 24].map((m) => (
                   <option key={m} value={m}>
-                    {m} months
+                    {m} {m === 1 ? 'month' : 'months'}
                   </option>
                 ))}
               </select>

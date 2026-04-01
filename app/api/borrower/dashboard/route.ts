@@ -51,11 +51,6 @@ export async function GET(request: NextRequest) {
       [userId]
     );
 
-    const [creditScoreRows] = await pool.execute<RowDataPacket[]>(
-      "SELECT COALESCE(credit_score, 650) AS credit_score FROM borrower_profiles WHERE user_id = ? LIMIT 1",
-      [userId]
-    );
-
     // Recent loans
     const [recentLoanRows] = await pool.execute<RowDataPacket[]>(
       `SELECT id, amount, status, requested_at AS requestedAt
@@ -66,18 +61,70 @@ export async function GET(request: NextRequest) {
       [userId]
     );
 
+    // Upcoming repayments
+    const [upcomingRepaymentsRows] = await pool.execute<RowDataPacket[]>(
+      `SELECT rs.id, rs.loan_id, rs.due_date, rs.total_amount, rs.status, lr.loan_number
+       FROM repayment_schedules rs
+       INNER JOIN loan_requests lr ON lr.id = rs.loan_id
+       WHERE lr.borrower_id = ? AND rs.status IN ('pending','partial')
+       ORDER BY rs.due_date ASC
+       LIMIT 5`,
+      [userId]
+    );
+
+    // KYC status
+    const [kycStatusRows] = await pool.execute<RowDataPacket[]>(
+      `SELECT status, submitted_at, reviewed_at, rejection_reason
+       FROM kyc_requests
+       WHERE user_id = ?
+       ORDER BY submitted_at DESC
+       LIMIT 1`,
+      [userId]
+    );
+
+    // Recent notifications
+    const [notificationsRows] = await pool.execute<RowDataPacket[]>(
+      `SELECT id, title, message, type, read_status, created_at
+       FROM notifications
+       WHERE user_id = ?
+       ORDER BY created_at DESC
+       LIMIT 5`,
+      [userId]
+    );
+
     return NextResponse.json({
       stats: {
         activeLoans: Number(activeLoanRows?.[0]?.count ?? 0),
         totalBorrowed: Number(totalBorrowedRows?.[0]?.total ?? 0),
         nextPayment: Number(nextPaymentRows?.[0]?.next_payment ?? 0),
-        creditScore: Number(creditScoreRows?.[0]?.credit_score ?? 650),
       },
       recentLoans: recentLoanRows.map((l) => ({
         id: l.id,
         amount: Number(l.amount),
         status: l.status,
         requestedAt: l.requestedAt,
+      })),
+      upcomingRepayments: upcomingRepaymentsRows.map((r) => ({
+        id: r.id,
+        loanId: r.loan_id,
+        loanNumber: r.loan_number,
+        dueDate: r.due_date,
+        amount: Number(r.total_amount),
+        status: r.status,
+      })),
+      kycStatus: kycStatusRows.length > 0 ? {
+        status: kycStatusRows[0].status,
+        submittedAt: kycStatusRows[0].submitted_at,
+        reviewedAt: kycStatusRows[0].reviewed_at,
+        rejectionReason: kycStatusRows[0].rejection_reason,
+      } : null,
+      notifications: notificationsRows.map((n) => ({
+        id: n.id,
+        title: n.title,
+        message: n.message,
+        type: n.type,
+        isRead: Boolean(n.read_status),
+        createdAt: n.created_at,
       })),
     });
   } catch (error) {

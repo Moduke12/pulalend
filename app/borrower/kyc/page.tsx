@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import DashboardLayout from "@/components/DashboardLayout";
 
@@ -81,7 +81,22 @@ export default function BorrowerKycPage() {
     idFront: null as File | null,
     idBack: null as File | null,
     selfie: null as File | null,
+    omangCopy: null as File | null,
+    payslip: null as File | null,
   });
+  const [previews, setPreviews] = useState({
+    idFront: "",
+    idBack: "",
+    selfie: "",
+    omangCopy: "",
+    payslip: "",
+  });
+  const [cameraOpen, setCameraOpen] = useState(false);
+  const [cameraError, setCameraError] = useState("");
+  const [cameraReady, setCameraReady] = useState(false);
+  const videoRef = useRef<HTMLVideoElement | null>(null);
+  const canvasRef = useRef<HTMLCanvasElement | null>(null);
+  const streamRef = useRef<MediaStream | null>(null);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const [submitting, setSubmitting] = useState(false);
@@ -100,6 +115,91 @@ export default function BorrowerKycPage() {
     setUser(parsed);
     fetchStatus(parsed.id);
   }, [router]);
+
+  useEffect(() => {
+    return () => {
+      if (streamRef.current) {
+        streamRef.current.getTracks().forEach((track) => track.stop());
+        streamRef.current = null;
+      }
+    };
+  }, []);
+
+  const startCamera = async () => {
+    setCameraError("");
+    setCameraReady(false);
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: "user" },
+        audio: false,
+      });
+      streamRef.current = stream;
+      if (videoRef.current) {
+        videoRef.current.srcObject = stream;
+        // Wait for video to be ready
+        videoRef.current.onloadedmetadata = () => {
+          videoRef.current?.play();
+          setCameraReady(true);
+        };
+      }
+      setCameraOpen(true);
+    } catch {
+      setCameraError("Unable to access the camera. Check permissions and try again.");
+    }
+  };
+
+  const stopCamera = () => {
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach((track) => track.stop());
+      streamRef.current = null;
+    }
+    setCameraOpen(false);
+    setCameraReady(false);
+  };
+
+  const captureSelfie = async () => {
+    if (!videoRef.current || !canvasRef.current) return;
+    const video = videoRef.current;
+    const canvas = canvasRef.current;
+    const width = video.videoWidth;
+    const height = video.videoHeight;
+    
+    canvas.width = width;
+    canvas.height = height;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+    ctx.drawImage(video, 0, 0, width, height);
+    canvas.toBlob((blob) => {
+      if (!blob) return;
+      const file = new File([blob], `selfie-${Date.now()}.jpg`, { type: "image/jpeg" });
+      setFiles((f) => ({ ...f, selfie: file }));
+      stopCamera();
+    }, "image/jpeg", 0.9);
+  };
+
+  useEffect(() => {
+    const nextPreviews = { idFront: "", idBack: "", selfie: "", omangCopy: "", payslip: "" };
+
+    if (files.idFront) nextPreviews.idFront = URL.createObjectURL(files.idFront);
+    if (files.idBack) nextPreviews.idBack = URL.createObjectURL(files.idBack);
+    if (files.selfie) nextPreviews.selfie = URL.createObjectURL(files.selfie);
+    if (files.omangCopy && files.omangCopy.type.startsWith("image/")) {
+      nextPreviews.omangCopy = URL.createObjectURL(files.omangCopy);
+    }
+    if (files.payslip && files.payslip.type.startsWith("image/")) {
+      nextPreviews.payslip = URL.createObjectURL(files.payslip);
+    }
+
+    setPreviews(nextPreviews);
+
+    return () => {
+      if (nextPreviews.idFront) URL.revokeObjectURL(nextPreviews.idFront);
+      if (nextPreviews.idBack) URL.revokeObjectURL(nextPreviews.idBack);
+      if (nextPreviews.selfie) URL.revokeObjectURL(nextPreviews.selfie);
+      if (nextPreviews.omangCopy) URL.revokeObjectURL(nextPreviews.omangCopy);
+      if (nextPreviews.payslip) URL.revokeObjectURL(nextPreviews.payslip);
+    };
+  }, [files.idFront, files.idBack, files.selfie, files.omangCopy, files.payslip]);
 
   const fetchStatus = async (userId: number) => {
     try {
@@ -125,11 +225,24 @@ export default function BorrowerKycPage() {
         setError("Select an ID type and enter the ID number.");
         return false;
       }
+      // Validate Omang format
+      if (form.idType === "Omang") {
+        const omangNumber = form.idNumber.replace(/\s/g, "");
+        if (!/^\d{9}$/.test(omangNumber)) {
+          setError("Omang number must be exactly 9 digits.");
+          return false;
+        }
+        const genderDigit = omangNumber[4]; // 5th digit (0-indexed)
+        if (genderDigit !== "1" && genderDigit !== "2") {
+          setError("Invalid Omang number. The 5th digit must be 1 (Male) or 2 (Female).");
+          return false;
+        }
+      }
     }
 
     if (currentStep === 1) {
       if (!form.address1.trim() || !form.city.trim() || !form.country.trim()) {
-        setError("Address line 1, city, and country are required.");
+        setError("Permanent address, city, and country are required.");
         return false;
       }
     }
@@ -176,6 +289,8 @@ export default function BorrowerKycPage() {
       if (files.idFront) payload.append("idFront", files.idFront);
       if (files.idBack) payload.append("idBack", files.idBack);
       if (files.selfie) payload.append("selfie", files.selfie);
+      if (files.omangCopy) payload.append("omangCopy", files.omangCopy);
+      if (files.payslip) payload.append("payslip", files.payslip);
 
       const res = await fetch("/api/borrower/kyc", {
         method: "POST",
@@ -284,9 +399,9 @@ export default function BorrowerKycPage() {
                     className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-blue focus:border-transparent outline-none bg-white"
                   >
                     <option value="">Select</option>
-                    <option value="national_id">National ID</option>
-                    <option value="passport">Passport</option>
-                    <option value="drivers_license">Driver's License</option>
+                    <option value="Omang">Omang (Botswana National ID)</option>
+                    <option value="Passport">Passport</option>
+                    <option value="Driver's License">Driver's License</option>
                   </select>
                 </div>
                 <div>
@@ -298,8 +413,36 @@ export default function BorrowerKycPage() {
                     onChange={(e) => setForm((f) => ({ ...f, idNumber: e.target.value }))}
                     disabled={isLocked}
                     className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-blue focus:border-transparent outline-none"
-                    placeholder="Enter your ID number"
+                    placeholder={form.idType === "Omang" ? "Enter 9-digit Omang number" : "Enter your ID number"}
                   />
+                  {form.idType === "Omang" && form.idNumber.replace(/\s/g, "").length === 9 && (() => {
+                    const omangNumber = form.idNumber.replace(/\s/g, "");
+                    const genderDigit = omangNumber[4];
+                    if (genderDigit === "1") {
+                      return (
+                        <p className="text-xs text-blue-600 mt-2">
+                          ✓ Valid Omang format - Gender: <strong>Male</strong> (5th digit: 1)
+                        </p>
+                      );
+                    } else if (genderDigit === "2") {
+                      return (
+                        <p className="text-xs text-pink-600 mt-2">
+                          ✓ Valid Omang format - Gender: <strong>Female</strong> (5th digit: 2)
+                        </p>
+                      );
+                    } else {
+                      return (
+                        <p className="text-xs text-red-600 mt-2">
+                          ✗ Invalid: 5th digit must be 1 (Male) or 2 (Female)
+                        </p>
+                      );
+                    }
+                  })()}
+                  {form.idType === "Omang" && (
+                    <p className="text-xs text-gray-500 mt-1">
+                      Omang must be 9 digits. The 5th digit indicates gender (1=Male, 2=Female)
+                    </p>
+                  )}
                 </div>
               </>
             )}
@@ -308,39 +451,27 @@ export default function BorrowerKycPage() {
               <>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Address Line 1
+                    Street / Ward
                   </label>
                   <input
                     value={form.address1}
                     onChange={(e) => setForm((f) => ({ ...f, address1: e.target.value }))}
                     disabled={isLocked}
                     className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-blue focus:border-transparent outline-none"
-                    placeholder="Street address"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Address Line 2 (optional)
-                  </label>
-                  <input
-                    value={form.address2}
-                    onChange={(e) => setForm((f) => ({ ...f, address2: e.target.value }))}
-                    disabled={isLocked}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-blue focus:border-transparent outline-none"
-                    placeholder="Apartment, suite, etc."
+                    placeholder="Street or ward"
                   />
                 </div>
                 <div className="grid md:grid-cols-2 gap-4">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">
-                      City
+                      City / Village
                     </label>
                     <input
                       value={form.city}
                       onChange={(e) => setForm((f) => ({ ...f, city: e.target.value }))}
                       disabled={isLocked}
                       className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-blue focus:border-transparent outline-none"
-                      placeholder="City"
+                      placeholder="City or village"
                     />
                   </div>
                   <div>
@@ -378,7 +509,14 @@ export default function BorrowerKycPage() {
                     className="w-full"
                   />
                   {files.idFront && (
-                    <p className="text-xs text-gray-500 mt-1">{files.idFront.name}</p>
+                    <p className="text-xs text-gray-500 mt-2">Selected: {files.idFront.name}</p>
+                  )}
+                  {previews.idFront && (
+                    <img
+                      src={previews.idFront}
+                      alt="ID front preview"
+                      className="mt-3 w-full max-w-xs rounded-lg border border-gray-200"
+                    />
                   )}
                 </div>
                 <div>
@@ -398,27 +536,161 @@ export default function BorrowerKycPage() {
                     className="w-full"
                   />
                   {files.idBack && (
-                    <p className="text-xs text-gray-500 mt-1">{files.idBack.name}</p>
+                    <p className="text-xs text-gray-500 mt-2">Selected: {files.idBack.name}</p>
+                  )}
+                  {previews.idBack && (
+                    <img
+                      src={previews.idBack}
+                      alt="ID back preview"
+                      className="mt-3 w-full max-w-xs rounded-lg border border-gray-200"
+                    />
                   )}
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Selfie
+                    Selfie (camera)
+                  </label>
+                  <p className="text-xs text-gray-500 mb-2">
+                    Use the front camera. Center your face, remove hats/glasses, and ensure good lighting.
+                  </p>
+                  {!cameraOpen && (
+                    <button
+                      type="button"
+                      onClick={startCamera}
+                      disabled={isLocked}
+                      className="px-4 py-2 rounded-lg bg-primary-blue text-white hover:bg-blue-700 transition disabled:opacity-60"
+                    >
+                      Tap to open camera
+                    </button>
+                  )}
+                  {cameraError && (
+                    <p className="text-xs text-red-600 mt-2">{cameraError}</p>
+                  )}
+                  {cameraOpen && (
+                    <div className="mt-3 space-y-3">
+                      <div className="relative w-full max-w-xs overflow-hidden rounded-lg border-2 border-primary-blue bg-gray-900">
+                        <video ref={videoRef} autoPlay playsInline muted className="w-full h-auto" />
+                        {!cameraReady && (
+                          <div className="absolute inset-0 flex items-center justify-center bg-gray-900 bg-opacity-75">
+                            <div className="text-center text-white">
+                              <svg className="animate-spin h-10 w-10 mx-auto mb-2" fill="none" viewBox="0 0 24 24">
+                                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                              </svg>
+                              <p className="text-sm">Starting camera...</p>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                      {cameraReady && (
+                        <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+                          <p className="text-sm text-blue-800">
+                            📸 Camera is ready! Position your face in the center and click "Take Selfie" when you're ready.
+                          </p>
+                        </div>
+                      )}
+                      <div className="flex items-center gap-3">
+                        <button
+                          type="button"
+                          onClick={captureSelfie}
+                          disabled={!cameraReady}
+                          className="px-4 py-2 rounded-lg bg-primary-blue text-white hover:bg-blue-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                          Take Selfie
+                        </button>
+                        <button
+                          type="button"
+                          onClick={stopCamera}
+                          className="px-4 py-2 rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-50 transition"
+                        >
+                          Cancel
+                        </button>
+                      </div>
+                      <canvas ref={canvasRef} className="hidden" />
+                    </div>
+                  )}
+                  {files.selfie && (
+                    <div className="mt-3 space-y-2">
+                      <div className="flex items-center gap-3 text-xs text-gray-500">
+                        <span>✓ Selfie captured</span>
+                        <button
+                          type="button"
+                          onClick={startCamera}
+                          disabled={isLocked}
+                          className="text-primary-blue hover:text-blue-700 font-medium disabled:opacity-60"
+                        >
+                          Retake
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setFiles((f) => ({ ...f, selfie: null }))}
+                          className="text-red-600 hover:text-red-700"
+                        >
+                          Remove
+                        </button>
+                      </div>
+                      {previews.selfie && (
+                        <img
+                          src={previews.selfie}
+                          alt="Selfie preview"
+                          className="w-full max-w-xs rounded-lg border border-gray-200"
+                        />
+                      )}
+                    </div>
+                  )}
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Certified copy of Omang
                   </label>
                   <input
                     type="file"
-                    accept="image/*"
+                    accept="image/*,.pdf"
                     disabled={isLocked}
                     onChange={(e) =>
                       setFiles((f) => ({
                         ...f,
-                        selfie: e.target.files?.[0] || null,
+                        omangCopy: e.target.files?.[0] || null,
                       }))
                     }
                     className="w-full"
                   />
-                  {files.selfie && (
-                    <p className="text-xs text-gray-500 mt-1">{files.selfie.name}</p>
+                  {files.omangCopy && (
+                    <p className="text-xs text-gray-500 mt-2">Selected: {files.omangCopy.name}</p>
+                  )}
+                  {previews.omangCopy && (
+                    <img
+                      src={previews.omangCopy}
+                      alt="Omang copy preview"
+                      className="mt-3 w-full max-w-xs rounded-lg border border-gray-200"
+                    />
+                  )}
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Payslip or affidavit (optional)
+                  </label>
+                  <input
+                    type="file"
+                    accept="image/*,.pdf"
+                    disabled={isLocked}
+                    onChange={(e) =>
+                      setFiles((f) => ({
+                        ...f,
+                        payslip: e.target.files?.[0] || null,
+                      }))
+                    }
+                    className="w-full"
+                  />
+                  {files.payslip && (
+                    <p className="text-xs text-gray-500 mt-2">Selected: {files.payslip.name}</p>
+                  )}
+                  {previews.payslip && (
+                    <img
+                      src={previews.payslip}
+                      alt="Payslip preview"
+                      className="mt-3 w-full max-w-xs rounded-lg border border-gray-200"
+                    />
                   )}
                 </div>
               </>

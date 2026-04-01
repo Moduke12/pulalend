@@ -70,9 +70,11 @@ export default function BorrowerDashboard() {
     activeLoans: 0,
     totalBorrowed: 0,
     nextPayment: 0,
-    creditScore: 650,
   });
   const [loans, setLoans] = useState<any[]>([]);
+  const [upcomingRepayments, setUpcomingRepayments] = useState<any[]>([]);
+  const [kycStatus, setKycStatus] = useState<any>(null);
+  const [notifications, setNotifications] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -97,6 +99,9 @@ export default function BorrowerDashboard() {
         const data = await response.json();
         setStats(data.stats);
         setLoans(data.recentLoans || []);
+        setUpcomingRepayments(data.upcomingRepayments || []);
+        setKycStatus(data.kycStatus);
+        setNotifications(data.notifications || []);
       }
     } catch (error) {
       console.error("Error fetching dashboard data:", error);
@@ -117,8 +122,90 @@ export default function BorrowerDashboard() {
         <p className="text-gray-600">Here is an overview of your account</p>
       </div>
 
+      {/* KYC Status Banner */}
+      {kycStatus && kycStatus.status !== 'verified' && (
+        <div className={`rounded-xl p-6 mb-8 ${
+          kycStatus.status === 'pending' ? 'bg-yellow-50 border border-yellow-200' :
+          kycStatus.status === 'rejected' ? 'bg-red-50 border border-red-200' :
+          'bg-blue-50 border border-blue-200'
+        }`}>
+          <div className="flex items-start space-x-4">
+            <div className={`w-12 h-12 rounded-full flex items-center justify-center ${
+              kycStatus.status === 'pending' ? 'bg-yellow-100' :
+              kycStatus.status === 'rejected' ? 'bg-red-100' :
+              'bg-blue-100'
+            }`}>
+              <svg className={`w-6 h-6 ${
+                kycStatus.status === 'pending' ? 'text-yellow-600' :
+                kycStatus.status === 'rejected' ? 'text-red-600' :
+                'text-blue-600'
+              }`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                {kycStatus.status === 'rejected' ? (
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                ) : (
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                )}
+              </svg>
+            </div>
+            <div className="flex-1">
+              <h3 className={`font-bold text-lg mb-1 ${
+                kycStatus.status === 'pending' ? 'text-yellow-800' :
+                kycStatus.status === 'rejected' ? 'text-red-800' :
+                'text-blue-800'
+              }`}>
+                {kycStatus.status === 'pending' ? 'KYC Verification Pending' :
+                 kycStatus.status === 'rejected' ? 'KYC Verification Rejected' :
+                 'Complete Your KYC Verification'}
+              </h3>
+              <p className={`text-sm mb-3 ${
+                kycStatus.status === 'pending' ? 'text-yellow-700' :
+                kycStatus.status === 'rejected' ? 'text-red-700' :
+                'text-blue-700'
+              }`}>
+                {kycStatus.status === 'pending' 
+                  ? 'Your KYC documents are being reviewed. This usually takes 1-2 business days.' 
+                  : kycStatus.status === 'rejected'
+                  ? `Reason: ${kycStatus.rejectionReason || 'Documents need to be resubmitted.'}`
+                  : 'To apply for loans, complete your KYC verification.'}
+              </p>
+              {kycStatus.status !== 'pending' && (
+                <Link 
+                  href="/borrower/kyc"
+                  className={`inline-block px-4 py-2 rounded-lg text-white font-medium ${
+                    kycStatus.status === 'rejected' ? 'bg-red-600 hover:bg-red-700' : 'bg-blue-600 hover:bg-blue-700'
+                  } transition`}
+                >
+                  {kycStatus.status === 'rejected' ? 'Resubmit KYC' : 'Complete KYC Now'}
+                </Link>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+      {!kycStatus && (
+        <div className="rounded-xl p-6 mb-8 bg-blue-50 border border-blue-200">
+          <div className="flex items-start space-x-4">
+            <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
+              <svg className="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+            </div>
+            <div className="flex-1">
+              <h3 className="font-bold text-lg mb-1 text-blue-800">Complete Your KYC Verification</h3>
+              <p className="text-sm mb-3 text-blue-700">To apply for loans, complete your KYC verification.</p>
+              <Link 
+                href="/borrower/kyc"
+                className="inline-block px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition font-medium"
+              >
+                Complete KYC Now
+              </Link>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Stats Grid */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-6 mb-8">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
         <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
           <p className="text-sm text-gray-500 mb-1">Active Loans</p>
           <p className="text-3xl font-bold text-primary-blue">{stats.activeLoans}</p>
@@ -134,10 +221,6 @@ export default function BorrowerDashboard() {
           <p className="text-3xl font-bold text-accent-orange">
             P{stats.nextPayment.toLocaleString()}
           </p>
-        </div>
-        <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
-          <p className="text-sm text-gray-500 mb-1">Credit Score</p>
-          <p className="text-3xl font-bold text-growth-green">{stats.creditScore}</p>
         </div>
       </div>
 
@@ -174,6 +257,82 @@ export default function BorrowerDashboard() {
           </div>
         </Link>
       </div>
+
+      {/* Upcoming Repayments */}
+      {upcomingRepayments.length > 0 && (
+        <div className="bg-white rounded-xl shadow-sm border border-gray-100 mb-8">
+          <div className="p-6 border-b border-gray-100">
+            <h3 className="text-lg font-bold text-navy-deep">Upcoming Repayments</h3>
+          </div>
+          <div className="p-6">
+            <div className="space-y-4">
+              {upcomingRepayments.map((repayment) => {
+                const dueDate = new Date(repayment.dueDate);
+                const today = new Date();
+                const daysUntilDue = Math.ceil((dueDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+                const isOverdue = daysUntilDue < 0;
+                const isDueSoon = daysUntilDue >= 0 && daysUntilDue <= 7;
+                
+                return (
+                  <div 
+                    key={repayment.id} 
+                    className={`flex items-center justify-between p-4 rounded-lg border ${
+                      isOverdue ? 'bg-red-50 border-red-200' :
+                      isDueSoon ? 'bg-yellow-50 border-yellow-200' :
+                      'bg-gray-50 border-gray-200'
+                    }`}
+                  >
+                    <div className="flex-1">
+                      <div className="flex items-center space-x-3 mb-1">
+                        <span className="font-medium text-navy-deep">
+                          Loan #{repayment.loanNumber || repayment.loanId}
+                        </span>
+                        {isOverdue && (
+                          <span className="px-2 py-1 bg-red-100 text-red-700 text-xs font-medium rounded-full">
+                            OVERDUE
+                          </span>
+                        )}
+                        {isDueSoon && !isOverdue && (
+                          <span className="px-2 py-1 bg-yellow-100 text-yellow-700 text-xs font-medium rounded-full">
+                            DUE SOON
+                          </span>
+                        )}
+                      </div>
+                      <p className={`text-sm ${
+                        isOverdue ? 'text-red-600' :
+                        isDueSoon ? 'text-yellow-700' :
+                        'text-gray-600'
+                      }`}>
+                        Due: {dueDate.toLocaleDateString()} 
+                        {isOverdue 
+                          ? ` (${Math.abs(daysUntilDue)} days overdue)` 
+                          : isDueSoon 
+                          ? ` (${daysUntilDue} days)` 
+                          : ''}
+                      </p>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-2xl font-bold text-navy-deep">
+                        P{repayment.amount.toLocaleString()}
+                      </p>
+                      <Link
+                        href="/borrower/repayments"
+                        className={`inline-block mt-2 px-4 py-1 text-sm rounded-lg font-medium transition ${
+                          isOverdue 
+                            ? 'bg-red-600 text-white hover:bg-red-700' 
+                            : 'bg-primary-blue text-white hover:bg-blue-700'
+                        }`}
+                      >
+                        Pay Now
+                      </Link>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Recent Loans */}
       <div className="bg-white rounded-xl shadow-sm border border-gray-100">
@@ -228,6 +387,70 @@ export default function BorrowerDashboard() {
           )}
         </div>
       </div>
+
+      {/* Recent Notifications */}
+      {notifications.length > 0 && (
+        <div className="bg-white rounded-xl shadow-sm border border-gray-100 mt-8">
+          <div className="p-6 border-b border-gray-100">
+            <h3 className="text-lg font-bold text-navy-deep">Recent Notifications</h3>
+          </div>
+          <div className="p-6">
+            <div className="space-y-3">
+              {notifications.map((notification) => (
+                <div 
+                  key={notification.id}
+                  className={`flex items-start space-x-4 p-4 rounded-lg border ${
+                    notification.isRead 
+                      ? 'bg-gray-50 border-gray-200' 
+                      : 'bg-blue-50 border-blue-200'
+                  }`}
+                >
+                  <div className={`w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 ${
+                    notification.type === 'success' ? 'bg-green-100' :
+                    notification.type === 'warning' ? 'bg-yellow-100' :
+                    notification.type === 'error' ? 'bg-red-100' :
+                    'bg-blue-100'
+                  }`}>
+                    <svg className={`w-5 h-5 ${
+                      notification.type === 'success' ? 'text-green-600' :
+                      notification.type === 'warning' ? 'text-yellow-600' :
+                      notification.type === 'error' ? 'text-red-600' :
+                      'text-blue-600'
+                    }`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      {notification.type === 'success' ? (
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                      ) : notification.type === 'warning' ? (
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                      ) : notification.type === 'error' ? (
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                      ) : (
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+                      )}
+                    </svg>
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-start justify-between">
+                      <h4 className={`font-medium ${
+                        notification.isRead ? 'text-gray-700' : 'text-navy-deep'
+                      }`}>
+                        {notification.title}
+                      </h4>
+                      <span className="text-xs text-gray-500 ml-2 flex-shrink-0">
+                        {new Date(notification.createdAt).toLocaleDateString()}
+                      </span>
+                    </div>
+                    <p className={`text-sm mt-1 ${
+                      notification.isRead ? 'text-gray-500' : 'text-gray-700'
+                    }`}>
+                      {notification.message}
+                    </p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
     </DashboardLayout>
   );
 }

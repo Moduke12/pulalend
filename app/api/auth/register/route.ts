@@ -6,10 +6,10 @@ import { RowDataPacket } from "mysql2";
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { email, password, firstName, lastName, phone, userType } = body;
+    const { email, password, firstName, lastName, phone, userType, permanentAddress, currentAddress } = body;
 
     // Validation
-    if (!email || !password || !firstName || !lastName || !userType) {
+    if (!email || !password || !firstName || !lastName || !userType || !permanentAddress || !currentAddress) {
       return NextResponse.json(
         { error: "All required fields must be provided" },
         { status: 400 }
@@ -41,9 +41,9 @@ export async function POST(request: NextRequest) {
 
     // Insert user
     const [result] = await pool.execute(
-      `INSERT INTO users (email, password_hash, first_name, last_name, phone, user_type, status, email_verified) 
-       VALUES (?, ?, ?, ?, ?, ?, 'active', FALSE)`,
-      [email, hashedPassword, firstName, lastName, phone || null, userType]
+      `INSERT INTO users (email, password_hash, first_name, last_name, phone, user_type, permanent_address, current_address, status, email_verified) 
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'active', FALSE)`,
+      [email, hashedPassword, firstName, lastName, phone || null, userType, permanentAddress, currentAddress]
     );
 
     const userId = (result as any).insertId;
@@ -68,6 +68,8 @@ export async function POST(request: NextRequest) {
       firstName,
       lastName,
       phone,
+      permanentAddress,
+      currentAddress,
       userType,
       status: "active",
       emailVerified: false,
