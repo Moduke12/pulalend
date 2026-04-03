@@ -4,7 +4,7 @@ import path from "path";
 import fs from "fs/promises";
 import { RowDataPacket } from "mysql2";
 
-const uploadsRoot = path.join(process.cwd(), "uploads", "kyc");
+const uploadsRoot = path.join(process.cwd(), "public", "uploads", "kyc");
 
 const sanitizeFilename = (name: string) => name.replace(/[^a-zA-Z0-9._-]/g, "_");
 
@@ -20,7 +20,7 @@ const saveFile = async (file: File, userId: number, label: string) => {
 
   await fs.writeFile(absPath, buffer);
 
-  return path.join("uploads", "kyc", String(userId), fileName).replace(/\\/g, "/");
+  return path.join("/uploads", "kyc", String(userId), fileName).replace(/\\/g, "/");
 };
 
 export async function GET(request: NextRequest) {

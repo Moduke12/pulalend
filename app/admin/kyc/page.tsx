@@ -223,10 +223,12 @@ export default function AdminKycPage() {
                 {selectedKyc.idFrontPath && (
                   <div className="border border-gray-200 rounded-lg p-3">
                     <p className="text-sm font-medium text-gray-700 mb-2">ID Front</p>
-                    <div className="bg-gray-100 rounded h-40 flex items-center justify-center">
-                      <svg className="w-12 h-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                      </svg>
+                    <div className="bg-gray-100 rounded h-40 flex items-center justify-center overflow-hidden">
+                      <img 
+                        src={selectedKyc.idFrontPath.startsWith('/') ? selectedKyc.idFrontPath : `/${selectedKyc.idFrontPath}`} 
+                        alt="ID Front" 
+                        className="w-full h-full object-contain"
+                      />
                     </div>
                     <p className="text-xs text-gray-500 mt-2 truncate">{selectedKyc.idFrontPath}</p>
                   </div>
@@ -234,10 +236,12 @@ export default function AdminKycPage() {
                 {selectedKyc.idBackPath && (
                   <div className="border border-gray-200 rounded-lg p-3">
                     <p className="text-sm font-medium text-gray-700 mb-2">ID Back</p>
-                    <div className="bg-gray-100 rounded h-40 flex items-center justify-center">
-                      <svg className="w-12 h-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                      </svg>
+                    <div className="bg-gray-100 rounded h-40 flex items-center justify-center overflow-hidden">
+                      <img 
+                        src={selectedKyc.idBackPath.startsWith('/') ? selectedKyc.idBackPath : `/${selectedKyc.idBackPath}`} 
+                        alt="ID Back" 
+                        className="w-full h-full object-contain"
+                      />
                     </div>
                     <p className="text-xs text-gray-500 mt-2 truncate">{selectedKyc.idBackPath}</p>
                   </div>
@@ -245,10 +249,12 @@ export default function AdminKycPage() {
                 {selectedKyc.selfiePath && (
                   <div className="border border-gray-200 rounded-lg p-3">
                     <p className="text-sm font-medium text-gray-700 mb-2">Selfie</p>
-                    <div className="bg-gray-100 rounded h-40 flex items-center justify-center">
-                      <svg className="w-12 h-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                      </svg>
+                    <div className="bg-gray-100 rounded h-40 flex items-center justify-center overflow-hidden">
+                      <img 
+                        src={selectedKyc.selfiePath.startsWith('/') ? selectedKyc.selfiePath : `/${selectedKyc.selfiePath}`} 
+                        alt="Selfie" 
+                        className="w-full h-full object-contain"
+                      />
                     </div>
                     <p className="text-xs text-gray-500 mt-2 truncate">{selectedKyc.selfiePath}</p>
                   </div>
@@ -256,10 +262,12 @@ export default function AdminKycPage() {
                 {selectedKyc.omangCopyPath && (
                   <div className="border border-gray-200 rounded-lg p-3">
                     <p className="text-sm font-medium text-gray-700 mb-2">Omang Copy</p>
-                    <div className="bg-gray-100 rounded h-40 flex items-center justify-center">
-                      <svg className="w-12 h-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                      </svg>
+                    <div className="bg-gray-100 rounded h-40 flex items-center justify-center overflow-hidden">
+                      <img 
+                        src={selectedKyc.omangCopyPath.startsWith('/') ? selectedKyc.omangCopyPath : `/${selectedKyc.omangCopyPath}`} 
+                        alt="Omang Copy" 
+                        className="w-full h-full object-contain"
+                      />
                     </div>
                     <p className="text-xs text-gray-500 mt-2 truncate">{selectedKyc.omangCopyPath}</p>
                   </div>
@@ -267,10 +275,12 @@ export default function AdminKycPage() {
                 {selectedKyc.payslipPath && (
                   <div className="border border-gray-200 rounded-lg p-3">
                     <p className="text-sm font-medium text-gray-700 mb-2">Payslip</p>
-                    <div className="bg-gray-100 rounded h-40 flex items-center justify-center">
-                      <svg className="w-12 h-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                      </svg>
+                    <div className="bg-gray-100 rounded h-40 flex items-center justify-center overflow-hidden">
+                      <img 
+                        src={selectedKyc.payslipPath.startsWith('/') ? selectedKyc.payslipPath : `/${selectedKyc.payslipPath}`} 
+                        alt="Payslip" 
+                        className="w-full h-full object-contain"
+                      />
                     </div>
                     <p className="text-xs text-gray-500 mt-2 truncate">{selectedKyc.payslipPath}</p>
                   </div>

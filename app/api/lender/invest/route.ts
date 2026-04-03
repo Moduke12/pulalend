@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import pool from "@/lib/db";
 import { RowDataPacket } from "mysql2";
+import { EmailService } from "@/lib/emailService";
 
 function addMonths(date: Date, months: number) {
   const d = new Date(date);
@@ -34,16 +35,17 @@ export async function POST(request: NextRequest) {
 
     // Validate lender
     const [userRows] = await pool.execute<RowDataPacket[]>(
-      "SELECT id, user_type FROM users WHERE id = ?",
+      "SELECT id, user_type, email, first_name, last_name FROM users WHERE id = ?",
       [lenderId]
     );
     if (userRows.length === 0 || userRows[0].user_type !== "lender") {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
+    const user = userRows[0];
 
     // Get loan and current funded amount
     const [loanRows] = await pool.execute<RowDataPacket[]>(
-      `SELECT id, borrower_id AS borrowerId, amount, interest_rate AS interestRate, duration_months AS durationMonths, status
+      `SELECT id, loan_number AS loanNumber, borrower_id AS borrowerId, amount, interest_rate AS interestRate, duration_months AS durationMonths, status
        FROM loan_requests
        WHERE id = ?`,
       [loanRequestId]
@@ -144,6 +146,15 @@ export async function POST(request: NextRequest) {
       }
 
       await conn.commit();
+
+      // Send email notification (async, don't wait)
+      EmailService.sendInvestmentConfirmation(
+        user.email,
+        `${user.first_name} ${user.last_name}`,
+        loan.loanNumber,
+        investAmount,
+        expectedReturn
+      ).catch(err => console.error('Email send error:', err));
 
       return NextResponse.json({
         success: true,

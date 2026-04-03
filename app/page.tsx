@@ -1,7 +1,20 @@
+"use client";
+
+import { useState, useEffect } from "react";
 import Image from "next/image";
 import Link from "next/link";
 
 export default function HomePage() {
+  const [currentSlide, setCurrentSlide] = useState(0);
+  const slides = ["/p1.jpeg", "/p2.jpeg", "/p3.jpeg", "/p4.jpeg"];
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setCurrentSlide((prev) => (prev + 1) % slides.length);
+    }, 4000);
+    return () => clearInterval(interval);
+  }, []);
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50">
       {/* Header */}
@@ -23,37 +36,16 @@ export default function HomePage() {
             </div>
 
             {/* Top Right Actions */}
-            <div className="hidden lg:flex items-center gap-2">
-              <Link href="/" className="text-sm text-gray-600 hover:text-primary-blue px-3 py-1">
-                Verify Payments
-              </Link>
-              <Link href="/login" className="text-sm text-gray-600 hover:text-primary-blue px-3 py-1">
-                Forgot Username or Password?
-              </Link>
-              <Link href="/register" className="text-sm text-primary-blue hover:text-blue-700 px-3 py-1 font-medium">
+            <div className="hidden lg:flex items-center gap-3">
+              <Link href="/register" className="text-sm text-primary-blue hover:text-blue-700 px-4 py-2 font-medium">
                 Register
               </Link>
-              <input
-                type="text"
-                placeholder="Email or Phone"
-                className="px-4 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-primary-blue focus:border-primary-blue outline-none w-40"
-              />
-              <input
-                type="password"
-                placeholder="Password"
-                className="px-4 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-primary-blue focus:border-primary-blue outline-none w-32"
-              />
               <Link
                 href="/login"
                 className="px-6 py-2 bg-navy-deep text-white rounded-lg hover:bg-slate-900 transition font-medium text-sm"
               >
                 Login
               </Link>
-              <button className="p-2 hover:bg-gray-100 rounded-lg">
-                <svg className="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                </svg>
-              </button>
             </div>
           </div>
 
@@ -147,16 +139,38 @@ export default function HomePage() {
             </div>
           </div>
 
-          {/* Right Image */}
+          {/* Right Image - Slideshow */}
           <div className="relative">
-            <div className="relative rounded-3xl overflow-hidden shadow-2xl">
-              <Image
-                src="/p2.jpeg"
-                alt="Pulalend student"
-                width={550}
-                height={500}
-                className="w-full h-auto object-cover max-h-[450px]"
-              />
+            <div className="relative rounded-3xl overflow-hidden shadow-2xl h-[600px]">
+              {slides.map((slide, index) => (
+                <Image
+                  key={slide}
+                  src={slide}
+                  alt="Pulalend"
+                  fill
+                  className={`object-cover transition-opacity duration-1000 ${
+                    index === currentSlide ? "opacity-100" : "opacity-0"
+                  }`}
+                  sizes="550px"
+                  priority={index === 0}
+                />
+              ))}
+              
+              {/* Slide indicators */}
+              <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-20 flex items-center gap-2">
+                {slides.map((_, index) => (
+                  <button
+                    key={index}
+                    onClick={() => setCurrentSlide(index)}
+                    className={`h-2 rounded-full transition-all ${
+                      index === currentSlide 
+                        ? "w-8 bg-white" 
+                        : "w-2 bg-white/40 hover:bg-white/60"
+                    }`}
+                    aria-label={`Go to slide ${index + 1}`}
+                  />
+                ))}
+              </div>
             </div>
             <div className="absolute bottom-8 right-8 bg-navy-deep/95 backdrop-blur-sm text-white rounded-2xl p-4 shadow-xl max-w-[240px]">
               <div className="flex items-start gap-3">
@@ -316,124 +330,6 @@ export default function HomePage() {
               <div className="font-bold text-amber-900 text-base">Borrow Responsibly:</div>
               <div className="text-amber-800">Smart borrowing today leads to a stronger future tomorrow.</div>
             </div>
-          </div>
-        </div>
-
-        {/* Success Stories Section */}
-        <div className="mt-20 mb-16">
-          {/* Journey Banner with Footprints */}
-          <div className="relative rounded-3xl overflow-hidden mb-12 h-64">
-            <Image
-              src="/pay-on-time.jpeg"
-              alt="Your journey with Pulalend"
-              fill
-              className="object-cover"
-            />
-            <div className="absolute inset-0 bg-gradient-to-r from-navy-deep/90 via-navy-deep/70 to-transparent flex items-center">
-              <div className="container mx-auto px-4">
-                <div className="max-w-2xl">
-                  <h2 className="text-4xl font-bold text-white mb-3">Your Journey Starts Here</h2>
-                  <p className="text-white/90 text-lg">
-                    Every step you take with Pulalend brings you closer to your dreams. Join thousands who have transformed their lives.
-                  </p>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Success Stories */}
-          <div className="text-center mb-10">
-            <h2 className="text-3xl font-bold text-navy-deep mb-3">Success Stories</h2>
-            <p className="text-gray-600 max-w-2xl mx-auto">
-              Real people, real dreams achieved. See how Pulalend has helped borrowers build better futures.
-            </p>
-          </div>
-
-          <div className="grid md:grid-cols-2 gap-8 max-w-5xl mx-auto">
-            {/* Success Story 1 */}
-            <div className="bg-white rounded-2xl shadow-xl overflow-hidden">
-              <div className="relative h-80">
-                <Image
-                  src="/p3.jpeg"
-                  alt="Thabo's success story"
-                  fill
-                  className="object-cover"
-                />
-              </div>
-              <div className="p-6">
-                <div className="flex items-center gap-2 mb-3">
-                  <div className="flex text-yellow-400">
-                    {[...Array(5)].map((_, i) => (
-                      <svg key={i} className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-                        <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-                      </svg>
-                    ))}
-                  </div>
-                  <span className="text-sm text-gray-500">5.0</span>
-                </div>
-                <h3 className="text-xl font-bold text-navy-deep mb-2">Thabo M.</h3>
-                <p className="text-gray-600 mb-3">
-                  "Pulalend helped me start my small business. The process was quick and transparent. Within days, I had the funds to purchase inventory. Now my business is thriving!"
-                </p>
-                <div className="flex items-center gap-2 text-sm text-gray-500">
-                  <svg className="w-4 h-4 text-growth-green" fill="currentColor" viewBox="0 0 20 20">
-                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                  </svg>
-                  <span>Verified Borrower</span>
-                </div>
-              </div>
-            </div>
-
-            {/* Success Story 2 */}
-            <div className="bg-white rounded-2xl shadow-xl overflow-hidden">
-              <div className="relative h-80">
-                <Image
-                  src="/p4.jpeg"
-                  alt="David's success story"
-                  fill
-                  className="object-cover"
-                />
-              </div>
-              <div className="p-6">
-                <div className="flex items-center gap-2 mb-3">
-                  <div className="flex text-yellow-400">
-                    {[...Array(5)].map((_, i) => (
-                      <svg key={i} className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-                        <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-                      </svg>
-                    ))}
-                  </div>
-                  <span className="text-sm text-gray-500">5.0</span>
-                </div>
-                <h3 className="text-xl font-bold text-navy-deep mb-2">David K.</h3>
-                <p className="text-gray-600 mb-3">
-                  "I needed funds for an emergency and Pulalend was there when I needed them most. The repayment terms were fair and manageable. Highly recommend!"
-                </p>
-                <div className="flex items-center gap-2 text-sm text-gray-500">
-                  <svg className="w-4 h-4 text-growth-green" fill="currentColor" viewBox="0 0 20 20">
-                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                  </svg>
-                  <span>Verified Borrower</span>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* CTA Banner */}
-          <div className="mt-12 bg-gradient-to-r from-primary-blue to-growth-green rounded-2xl p-8 text-center text-white">
-            <h3 className="text-2xl font-bold mb-3">Ready to Write Your Success Story?</h3>
-            <p className="text-white/90 mb-6 max-w-2xl mx-auto">
-              Join thousands of satisfied borrowers who have achieved their dreams with Pulalend. Apply today and take the first step toward a brighter future.
-            </p>
-            <Link
-              href="/register"
-              className="inline-flex items-center gap-2 px-8 py-3 bg-white text-primary-blue rounded-xl font-semibold hover:shadow-lg transition"
-            >
-              Get Started Now
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" />
-              </svg>
-            </Link>
           </div>
         </div>
       </main>

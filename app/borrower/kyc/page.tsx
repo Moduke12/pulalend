@@ -125,26 +125,179 @@ export default function BorrowerKycPage() {
     };
   }, []);
 
+  // Setup video when camera opens and stream is available
+  useEffect(() => {
+    if (cameraOpen && streamRef.current && videoRef.current && !cameraReady) {
+      console.log("useEffect: Setting up video with stream");
+      const video = videoRef.current;
+      const stream = streamRef.current;
+      
+      if (video.srcObject !== stream) {
+        video.srcObject = stream;
+      }
+      
+      // Aggressive timeout - 1.5 seconds
+      const timeoutId = setTimeout(() => {
+        console.log("useEffect: Timeout - forcing camera ready");
+        setCameraReady(true);
+      }, 1500);
+      
+      const handleMetadata = async () => {
+        clearTimeout(timeoutId);
+        console.log("useEffect: Video metadata loaded");
+        try {
+          await video.play();
+          console.log("useEffect: Video playing");
+          setCameraReady(true);
+        } catch (err) {
+          console.log("useEffect: Play failed, but setting ready anyway");
+          setCameraReady(true);
+        }
+      };
+      
+      const handleData = () => {
+        clearTimeout(timeoutId);
+        console.log("useEffect: Video data loaded");
+        setCameraReady(true);
+      };
+      
+      video.addEventListener('loadedmetadata', handleMetadata);
+      video.addEventListener('loadeddata', handleData);
+      
+      // Try to play immediately
+      video.play().catch(err => {
+        console.log("useEffect: Immediate play attempt:", err.message);
+      });
+      
+      return () => {
+        clearTimeout(timeoutId);
+        video.removeEventListener('loadedmetadata', handleMetadata);
+        video.removeEventListener('loadeddata', handleData);
+      };
+    }
+  }, [cameraOpen, cameraReady]);
+
   const startCamera = async () => {
     setCameraError("");
     setCameraReady(false);
+    
+    // Check if getUserMedia is supported
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+      setCameraError("Camera not supported on this browser. Use Chrome, Firefox, or Safari.");
+      return;
+    }
+
     try {
+      console.log("Requesting camera access...");
       const stream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: "user" },
+        video: { facingMode: "user", width: { ideal: 1280 }, height: { ideal: 720 } },
         audio: false,
       });
+      console.log("Camera access granted", stream);
+      
       streamRef.current = stream;
-      if (videoRef.current) {
-        videoRef.current.srcObject = stream;
-        // Wait for video to be ready
-        videoRef.current.onloadedmetadata = () => {
-          videoRef.current?.play();
-          setCameraReady(true);
-        };
-      }
       setCameraOpen(true);
-    } catch {
-      setCameraError("Unable to access the camera. Check permissions and try again.");
+      
+      // Wait for React to render the video element, then attach stream
+      setTimeout(() => {
+        console.log("Setting up video element...");
+        if (videoRef.current) {
+          const video = videoRef.current;
+          video.srcObject = stream;
+          
+          console.log("Video element found, stream attached");
+          
+          // Set up timeout fallback - camera ready after 2 seconds max
+          const timeoutId = setTimeout(() => {
+            console.log("Timeout reached - forcing camera ready");
+            setCameraReady(true);
+          }, 2000);
+          
+          // Wait for video to be ready
+          video.onloadedmetadata = async () => {
+            clearTimeout(timeoutId);
+            console.log("Video metadata loaded");
+            
+            try {
+              await video.play();
+              console.log("Video playing successfully");
+              setCameraReady(true);
+            } catch (err: any) {
+              console.error("Video play error:", err);
+              setCameraReady(true);
+            }
+          };
+          
+          // Alternative: loadeddata event
+          video.onloadeddata = () => {
+            clearTimeout(timeoutId);
+            console.log("Video data loaded");
+            setCameraReady(true);
+          };
+          
+          // Add error handler
+          video.onerror = (e) => {
+            clearTimeout(timeoutId);
+            console.error("Video element error:", e);
+            setCameraError("Video element error. Please refresh and try again.");
+          };
+          
+          // Try immediate play
+          video.play().catch((err) => {
+            console.log("Initial play attempt:", err.message);
+          });
+        } else {
+          console.error("Video ref is null after timeout - this should not happen");
+          setCameraError("Failed to initialize camera view. Please try again.");
+        }
+      }, 100);
+      
+    } catch (err: any) {
+      console.error("Camera access error:", err);
+      
+      // Provide specific error messages based on the error type
+      if (err.name === "NotAllowedError" || err.name === "PermissionDeniedError") {
+        setCameraError("Camera permission denied. Click the camera icon in your browser's address bar to allow access.");
+      } else if (err.name === "NotFoundError" || err.name === "DevicesNotFoundError") {
+        setCameraError("No camera found on this device.");
+      } else if (err.name === "NotReadableError" || err.name === "TrackStartError") {
+        setCameraError("Camera is already in use by another application. Close other apps and try again.");
+      } else if (err.name === "OverconstrainedError") {
+        setCameraError("Camera doesn't support the required settings. Trying with basic settings...");
+        // Retry with basic constraints
+        try {
+          const stream = await navigator.mediaDevices.getUserMedia({
+            video: true,
+            audio: false,
+          });
+          streamRef.current = stream;
+          setCameraOpen(true);
+          
+          setTimeout(() => {
+            if (videoRef.current) {
+              const video = videoRef.current;
+              video.srcObject = stream;
+              video.onloadedmetadata = async () => {
+                try {
+                  await video.play();
+                  setCameraReady(true);
+                } catch {
+                  setCameraReady(true);
+                }
+              };
+              setTimeout(() => setCameraReady(true), 2000);
+              video.play().catch(() => {});
+            }
+          }, 100);
+          setCameraError("");
+        } catch {
+          setCameraError("Unable to access camera with basic settings.");
+        }
+      } else if (err.name === "TypeError") {
+        setCameraError("Camera API error. Make sure you're using HTTPS or localhost.");
+      } else {
+        setCameraError(`Camera error: ${err.name || err.message || "Unknown error"}`);
+      }
     }
   };
 
@@ -158,21 +311,61 @@ export default function BorrowerKycPage() {
   };
 
   const captureSelfie = async () => {
-    if (!videoRef.current || !canvasRef.current) return;
+    if (!videoRef.current || !canvasRef.current) {
+      console.error("Video or canvas ref not available");
+      setCameraError("Camera not ready. Please try again.");
+      return;
+    }
+    
     const video = videoRef.current;
     const canvas = canvasRef.current;
+    
+    // Check if video is actually playing
+    if (video.readyState < 2) {
+      console.error("Video not ready, readyState:", video.readyState);
+      setCameraError("Video not ready. Wait a moment and try again.");
+      return;
+    }
+    
     const width = video.videoWidth;
     const height = video.videoHeight;
+    
+    if (width === 0 || height === 0) {
+      console.error("Invalid video dimensions:", width, height);
+      setCameraError("Camera feed not ready. Please wait.");
+      return;
+    }
+    
+    console.log("Capturing selfie, dimensions:", width, height);
     
     canvas.width = width;
     canvas.height = height;
     const ctx = canvas.getContext("2d");
-    if (!ctx) return;
+    if (!ctx) {
+      console.error("Cannot get 2d context");
+      setCameraError("Browser error. Please try a different browser.");
+      return;
+    }
+    
+    // Draw the video frame to canvas
     ctx.drawImage(video, 0, 0, width, height);
+    
+    // Convert to blob
     canvas.toBlob((blob) => {
-      if (!blob) return;
+      if (!blob) {
+        console.error("Blob conversion failed");
+        setCameraError("Failed to capture image. Try again.");
+        return;
+      }
+      
+      console.log("Selfie captured successfully, size:", blob.size);
       const file = new File([blob], `selfie-${Date.now()}.jpg`, { type: "image/jpeg" });
       setFiles((f) => ({ ...f, selfie: file }));
+      
+      // Create preview immediately
+      const previewUrl = URL.createObjectURL(blob);
+      setPreviews((p) => ({ ...p, selfie: previewUrl }));
+      
       stopCamera();
     }, "image/jpeg", 0.9);
   };
@@ -203,12 +396,24 @@ export default function BorrowerKycPage() {
 
   const fetchStatus = async (userId: number) => {
     try {
+      console.log('Fetching KYC status for user:', userId);
       const res = await fetch(`/api/borrower/kyc?userId=${userId}`);
       const data = await res.json();
-      if (res.ok && data.status) {
-        setStatus(data.status);
+      console.log('KYC status response:', data);
+      
+      if (res.ok) {
+        if (data.status) {
+          console.log('Setting KYC status to:', data.status);
+          setStatus(data.status);
+        } else {
+          console.log('No status in response, setting to not_submitted');
+          setStatus('not_submitted');
+        }
+      } else {
+        console.error('Failed to fetch KYC status:', res.status);
       }
-    } catch {
+    } catch (err) {
+      console.error('Error fetching KYC status:', err);
       // Best-effort status lookup
     }
   };
@@ -303,9 +508,18 @@ export default function BorrowerKycPage() {
         return;
       }
 
-      setStatus(data.status || "pending");
-      setSuccess("KYC submitted successfully. We will review your documents.");
-    } catch {
+      const newStatus = data.status || "pending";
+      console.log('KYC submission successful, new status:', newStatus);
+      setStatus(newStatus);
+      setSuccess("KYC submitted successfully! Your documents are under review. You will be notified when approved.");
+      
+      // Refresh status after a moment to ensure it's up to date
+      setTimeout(() => {
+        console.log('Refreshing KYC status after submission...');
+        fetchStatus(user.id);
+      }, 1000);
+    } catch (err) {
+      console.error('KYC submission error:', err);
       setError("Network error. Please try again.");
     } finally {
       setSubmitting(false);
@@ -359,18 +573,36 @@ export default function BorrowerKycPage() {
           </div>
 
           {status === "pending" && (
-            <div className="mt-6 bg-yellow-50 border border-yellow-200 text-yellow-700 px-4 py-3 rounded-lg">
-              Your KYC is under review. You will be notified when it is approved.
+            <div className="mt-6 bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+              <div className="flex items-start gap-3">
+                <svg className="w-6 h-6 text-yellow-600 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                <div>
+                  <p className="font-semibold text-yellow-800">KYC Under Review</p>
+                  <p className="text-sm text-yellow-700 mt-1">
+                    Your KYC submission is being reviewed by our team. You will be notified via email when it is approved. This typically takes 1-2 business days.
+                  </p>
+                  <button
+                    onClick={() => fetchStatus(user.id)}
+                    className="mt-2 text-xs text-yellow-700 underline hover:no-underline"
+                  >
+                    Refresh Status
+                  </button>
+                </div>
+              </div>
             </div>
           )}
           {status === "approved" && (
             <div className="mt-6 bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-lg">
-              Your KYC is approved. You have full access to borrower features.
+              <p className="font-semibold">✓ KYC Approved</p>
+              <p className="text-sm mt-1">Your identity is verified. You have full access to borrower features and can apply for loans.</p>
             </div>
           )}
           {status === "rejected" && (
             <div className="mt-6 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg">
-              Your KYC was rejected. Please correct your details and resubmit.
+              <p className="font-semibold">✗ KYC Rejected</p>
+              <p className="text-sm mt-1">Your KYC was rejected. Please correct your details and resubmit with valid documents.</p>
             </div>
           )}
 
@@ -553,88 +785,146 @@ export default function BorrowerKycPage() {
                   <p className="text-xs text-gray-500 mb-2">
                     Use the front camera. Center your face, remove hats/glasses, and ensure good lighting.
                   </p>
-                  {!cameraOpen && (
-                    <button
-                      type="button"
-                      onClick={startCamera}
-                      disabled={isLocked}
-                      className="px-4 py-2 rounded-lg bg-primary-blue text-white hover:bg-blue-700 transition disabled:opacity-60"
-                    >
-                      Tap to open camera
-                    </button>
+                  {!cameraOpen && !files.selfie && (
+                    <div className="space-y-2">
+                      <button
+                        type="button"
+                        onClick={startCamera}
+                        disabled={isLocked}
+                        className="px-4 py-2 rounded-lg bg-primary-blue text-white hover:bg-blue-700 transition disabled:opacity-60 font-medium"
+                      >
+                        📸 Open Camera
+                      </button>
+                      <p className="text-xs text-gray-500">or</p>
+                      <div>
+                        <input
+                          type="file"
+                          accept="image/*"
+                          capture="user"
+                          disabled={isLocked}
+                          onChange={(e) => {
+                            const file = e.target.files?.[0];
+                            if (file) {
+                              setFiles((f) => ({ ...f, selfie: file }));
+                            }
+                          }}
+                          className="text-sm"
+                          id="selfie-upload"
+                        />
+                        <label htmlFor="selfie-upload" className="text-xs text-gray-500 cursor-pointer">
+                          Upload from device
+                        </label>
+                      </div>
+                    </div>
                   )}
                   {cameraError && (
-                    <p className="text-xs text-red-600 mt-2">{cameraError}</p>
+                    <div className="mt-2 p-3 bg-red-50 border border-red-200 rounded-lg">
+                      <p className="text-sm text-red-700 font-medium">❌ Camera Error</p>
+                      <p className="text-xs text-red-600 mt-1">{cameraError}</p>
+                      <button
+                        type="button"
+                        onClick={startCamera}
+                        className="mt-2 text-xs text-red-700 underline hover:no-underline"
+                      >
+                        Try Again
+                      </button>
+                    </div>
                   )}
                   {cameraOpen && (
                     <div className="mt-3 space-y-3">
-                      <div className="relative w-full max-w-xs overflow-hidden rounded-lg border-2 border-primary-blue bg-gray-900">
-                        <video ref={videoRef} autoPlay playsInline muted className="w-full h-auto" />
+                      <div className="relative w-full max-w-md mx-auto overflow-hidden rounded-lg border-4 border-primary-blue bg-gray-900 shadow-xl">
+                        <video 
+                          ref={videoRef} 
+                          autoPlay 
+                          playsInline 
+                          muted 
+                          className="w-full h-auto mirror"
+                          style={{ transform: 'scaleX(-1)' }}
+                        />
                         {!cameraReady && (
-                          <div className="absolute inset-0 flex items-center justify-center bg-gray-900 bg-opacity-75">
-                            <div className="text-center text-white">
-                              <svg className="animate-spin h-10 w-10 mx-auto mb-2" fill="none" viewBox="0 0 24 24">
+                          <div className="absolute inset-0 flex items-center justify-center bg-gray-900 bg-opacity-90">
+                            <div className="text-center text-white px-4">
+                              <svg className="animate-spin h-12 w-12 mx-auto mb-3" fill="none" viewBox="0 0 24 24">
                                 <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                                 <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                               </svg>
-                              <p className="text-sm">Starting camera...</p>
+                              <p className="text-sm font-medium">Starting camera...</p>
+                              <p className="text-xs mt-1 opacity-75">Grant permission if asked</p>
+                            </div>
+                          </div>
+                        )}
+                        {cameraReady && (
+                          <div className="absolute top-4 left-4 right-4">
+                            <div className="bg-green-500 text-white text-xs font-semibold px-3 py-1.5 rounded-full inline-flex items-center gap-2 shadow-lg">
+                              <span className="w-2 h-2 bg-white rounded-full animate-pulse"></span>
+                              Camera Ready
                             </div>
                           </div>
                         )}
                       </div>
                       {cameraReady && (
-                        <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
-                          <p className="text-sm text-blue-800">
-                            📸 Camera is ready! Position your face in the center and click "Take Selfie" when you're ready.
-                          </p>
+                        <div className="bg-blue-50 border border-blue-300 rounded-lg p-4">
+                          <p className="text-sm text-blue-900 font-medium">✨ Tips for best results:</p>
+                          <ul className="text-xs text-blue-800 mt-2 space-y-1 list-disc list-inside">
+                            <li>Position your face in the center of the frame</li>
+                            <li>Make sure your face is well-lit (no shadows)</li>
+                            <li>Remove sunglasses, hats, and face masks</li>
+                            <li>Look directly at the camera</li>
+                          </ul>
                         </div>
                       )}
-                      <div className="flex items-center gap-3">
+                      <div className="flex items-center gap-3 justify-center">
                         <button
                           type="button"
                           onClick={captureSelfie}
                           disabled={!cameraReady}
-                          className="px-4 py-2 rounded-lg bg-primary-blue text-white hover:bg-blue-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
+                          className="px-6 py-3 rounded-lg bg-primary-blue text-white hover:bg-blue-700 transition disabled:opacity-50 disabled:cursor-not-allowed font-semibold shadow-lg"
                         >
-                          Take Selfie
+                          📸 Take Selfie
                         </button>
                         <button
                           type="button"
                           onClick={stopCamera}
-                          className="px-4 py-2 rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-50 transition"
+                          className="px-4 py-3 rounded-lg border-2 border-gray-300 text-gray-700 hover:bg-gray-100 transition font-medium"
                         >
-                          Cancel
+                          ✕ Cancel
                         </button>
                       </div>
                       <canvas ref={canvasRef} className="hidden" />
                     </div>
                   )}
-                  {files.selfie && (
+                  {files.selfie && !cameraOpen && (
                     <div className="mt-3 space-y-2">
-                      <div className="flex items-center gap-3 text-xs text-gray-500">
-                        <span>✓ Selfie captured</span>
+                      <div className="flex items-center gap-3 bg-green-50 border border-green-200 rounded-lg px-3 py-2">
+                        <span className="text-sm text-green-700 font-medium">✓ Selfie captured</span>
+                        <div className="flex-1"></div>
                         <button
                           type="button"
                           onClick={startCamera}
                           disabled={isLocked}
-                          className="text-primary-blue hover:text-blue-700 font-medium disabled:opacity-60"
+                          className="text-xs text-primary-blue hover:text-blue-700 font-medium underline disabled:opacity-60"
                         >
                           Retake
                         </button>
                         <button
                           type="button"
                           onClick={() => setFiles((f) => ({ ...f, selfie: null }))}
-                          className="text-red-600 hover:text-red-700"
+                          className="text-xs text-red-600 hover:text-red-700 font-medium underline"
                         >
                           Remove
                         </button>
                       </div>
                       {previews.selfie && (
-                        <img
-                          src={previews.selfie}
-                          alt="Selfie preview"
-                          className="w-full max-w-xs rounded-lg border border-gray-200"
-                        />
+                        <div className="relative inline-block">
+                          <img
+                            src={previews.selfie}
+                            alt="Selfie preview"
+                            className="w-full max-w-sm rounded-lg border-2 border-green-300 shadow-md"
+                          />
+                          <div className="absolute top-2 right-2 bg-green-500 text-white text-xs font-bold px-2 py-1 rounded-full">
+                            ✓
+                          </div>
+                        </div>
                       )}
                     </div>
                   )}

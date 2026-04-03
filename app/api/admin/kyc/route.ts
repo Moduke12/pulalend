@@ -37,9 +37,7 @@ export async function GET(request: NextRequest) {
           u.last_name,
           u.email,
           u.user_type,
-          u.phone,
-          u.permanent_address,
-          u.current_address
+          u.phone
         FROM kyc_requests kr
         INNER JOIN users u ON u.id = kr.user_id
         WHERE kr.status = ?
@@ -73,8 +71,6 @@ export async function GET(request: NextRequest) {
           email: r.email,
           userType: r.user_type,
           phone: r.phone,
-          permanentAddress: r.permanent_address,
-          currentAddress: r.current_address,
         },
       })),
     });

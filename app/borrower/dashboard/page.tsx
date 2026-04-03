@@ -94,14 +94,26 @@ export default function BorrowerDashboard() {
 
   const fetchDashboardData = async (userId: number) => {
     try {
+      console.log('Fetching dashboard data for userId:', userId);
       const response = await fetch(`/api/borrower/dashboard?userId=${userId}`);
+      console.log('Dashboard API response status:', response.status);
+      
       if (response.ok) {
         const data = await response.json();
+        console.log('Dashboard API data:', data);
+        console.log('KYC Status from API:', data.kycStatus);
+        
         setStats(data.stats);
         setLoans(data.recentLoans || []);
         setUpcomingRepayments(data.upcomingRepayments || []);
         setKycStatus(data.kycStatus);
         setNotifications(data.notifications || []);
+        
+        console.log('KYC Status state updated to:', data.kycStatus);
+      } else {
+        console.error('Dashboard API failed with status:', response.status);
+        const errorData = await response.json();
+        console.error('Error response:', errorData);
       }
     } catch (error) {
       console.error("Error fetching dashboard data:", error);

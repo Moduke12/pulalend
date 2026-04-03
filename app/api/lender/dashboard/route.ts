@@ -57,6 +57,12 @@ export async function GET(request: NextRequest) {
       [lenderId]
     );
 
+    // Get total commission paid to Pulalend
+    const [commissionRows] = await pool.execute<RowDataPacket[]>(
+      "SELECT COALESCE(SUM(platform_commission), 0) AS totalCommission FROM investments WHERE lender_id = ?",
+      [lenderId]
+    );
+
     // Get active investments with loan and borrower details
     const [investmentsRows] = await pool.execute<RowDataPacket[]>(
       `SELECT 
@@ -137,6 +143,7 @@ export async function GET(request: NextRequest) {
         availableBalance: Number(profile.available_balance),
         totalInvested: Number(profile.total_invested),
         totalEarned: Number(profile.total_earned),
+        totalCommission: Number(commissionRows?.[0]?.totalCommission ?? 0),
       },
       activeInvestments: investmentsRows.map((inv) => ({
         id: inv.id,

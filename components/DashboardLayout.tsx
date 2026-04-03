@@ -15,6 +15,7 @@ interface DashboardLayoutProps {
   userType: "borrower" | "lender" | "admin";
   navItems: NavItem[];
   title: string;
+  commissionAmount?: number;
 }
 
 export default function DashboardLayout({
@@ -22,6 +23,7 @@ export default function DashboardLayout({
   userType,
   navItems,
   title,
+  commissionAmount,
 }: DashboardLayoutProps) {
   const router = useRouter();
 
@@ -73,6 +75,31 @@ export default function DashboardLayout({
             </Link>
           ))}
         </nav>
+
+        {/* Commission Display */}
+        {commissionAmount !== undefined && (
+          <div className="px-4 pb-4">
+            <div className="bg-white/10 backdrop-blur-sm rounded-lg p-4 border border-white/20">
+              <div className="flex items-center gap-2 mb-2">
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                <span className="text-xs font-medium text-white/70">
+                  {userType === "admin" ? "Commission Earned" : "Commission Paid"}
+                </span>
+              </div>
+              <div className="text-2xl font-bold">
+                P{Number(commissionAmount || 0).toLocaleString(undefined, {
+                  minimumFractionDigits: 2,
+                  maximumFractionDigits: 2
+                })}
+              </div>
+              <div className="text-[10px] text-white/60 mt-1">
+                {userType === "admin" ? "Platform earnings (2%)" : "Platform fee (2%)"}
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Logout */}
         <div className="p-4">

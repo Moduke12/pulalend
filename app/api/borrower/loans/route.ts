@@ -103,10 +103,16 @@ export async function POST(request: NextRequest) {
 
     const fullPurpose = notes ? `${purpose}\n\nNotes: ${notes}` : purpose;
 
+    // Generate loan number
+    const [maxIdRow] = await pool.execute<RowDataPacket[]>(
+      'SELECT COALESCE(MAX(id), 0) + 1 as nextId FROM loan_requests'
+    );
+    const loanNumber = `LOAN${String(maxIdRow[0].nextId).padStart(6, '0')}`;
+
     const [result] = await pool.execute(
-      `INSERT INTO loan_requests (borrower_id, amount, interest_rate, duration_months, purpose, status, risk_grade)
-       VALUES (?, ?, ?, ?, ?, 'pending', ?)`,
-      [borrowerId, loanAmount, interestRate, duration, fullPurpose, riskGrade]
+      `INSERT INTO loan_requests (loan_number, borrower_id, amount, interest_rate, duration_months, purpose, status, risk_grade)
+       VALUES (?, ?, ?, ?, ?, ?, 'pending', ?)`,
+      [loanNumber, borrowerId, loanAmount, interestRate, duration, fullPurpose, riskGrade]
     );
 
     const loanId = (result as any).insertId;

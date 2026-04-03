@@ -75,6 +75,7 @@ export default function LenderDashboardPage() {
     availableBalance: 0,
     totalInvested: 0,
     totalEarned: 0,
+    totalCommission: 0,
   });
   const [activeInvestments, setActiveInvestments] = useState<any[]>([]);
   const [opportunities, setOpportunities] = useState<any[]>([]);
@@ -99,16 +100,26 @@ export default function LenderDashboardPage() {
   const load = async (userId: number) => {
     setLoading(true);
     try {
+      console.log('Fetching lender dashboard for userId:', userId);
       const res = await fetch(`/api/lender/dashboard?userId=${userId}`);
       const data = await res.json();
+      console.log('Lender dashboard API response:', data);
+      console.log('Portfolio data:', data.portfolio);
+      
       if (res.ok) {
         setStats(data.stats);
-        setPortfolio(data.portfolio || { availableBalance: 0, totalInvested: 0, totalEarned: 0 });
+        setPortfolio(data.portfolio || { availableBalance: 0, totalInvested: 0, totalEarned: 0, totalCommission: 0 });
         setActiveInvestments(data.activeInvestments || []);
         setOpportunities(data.opportunities || []);
         setNotifications(data.notifications || []);
         setTransactions(data.transactions || []);
+        
+        console.log('Portfolio state set to:', data.portfolio);
+      } else {
+        console.error('Dashboard API error:', data);
       }
+    } catch (err) {
+      console.error('Dashboard fetch error:', err);
     } finally {
       setLoading(false);
     }
@@ -117,7 +128,12 @@ export default function LenderDashboardPage() {
   if (!user) return null;
 
   return (
-    <DashboardLayout userType="lender" navItems={navItems} title="Lender Dashboard">
+    <DashboardLayout 
+      userType="lender" 
+      navItems={navItems} 
+      title="Lender Dashboard"
+      commissionAmount={portfolio.totalCommission}
+    >
       <div className="mb-8">
         <h2 className="text-2xl font-bold text-navy-deep">Welcome back, {user.firstName}!</h2>
         <p className="text-gray-600">Overview of your lending activity</p>
@@ -172,8 +188,42 @@ export default function LenderDashboardPage() {
         </div>
       </div>
 
+      {/* Total Portfolio Summary */}
+      <div className="bg-gradient-to-r from-navy-deep to-primary-blue rounded-xl p-6 shadow-lg text-white mb-8">
+        <div className="flex items-center justify-between">
+          <div>
+            <p className="text-sm text-white/70 mb-2">Total Portfolio Value</p>
+            <p className="text-4xl font-bold">
+              P{Number((portfolio.availableBalance || 0) + (portfolio.totalInvested || 0)).toLocaleString(undefined, {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2
+              })}
+            </p>
+            <div className="flex items-center gap-6 mt-3 text-sm">
+              <div>
+                <span className="text-white/60">Available: </span>
+                <span className="font-semibold">P{Number(portfolio.availableBalance || 0).toLocaleString()}</span>
+              </div>
+              <div>
+                <span className="text-white/60">Invested: </span>
+                <span className="font-semibold">P{Number(portfolio.totalInvested || 0).toLocaleString()}</span>
+              </div>
+              <div>
+                <span className="text-white/60">Commission: </span>
+                <span className="font-semibold">P{Number(portfolio.totalCommission || 0).toLocaleString()}</span>
+              </div>
+            </div>
+          </div>
+          <div className="hidden md:block">
+            <svg className="w-20 h-20 text-white/20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+            </svg>
+          </div>
+        </div>
+      </div>
+
       {/* Performance Stats */}
-      <div className="grid grid-cols-2 md:grid-cols-3 gap-6 mb-8">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-6 mb-8">
         <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
           <p className="text-sm text-gray-500 mb-1">Available Loans</p>
           <p className="text-3xl font-bold text-growth-green">{stats.availableLoans}</p>
@@ -186,6 +236,15 @@ export default function LenderDashboardPage() {
           <p className="text-sm text-gray-500 mb-1">Expected Return</p>
           <p className="text-3xl font-bold text-accent-orange">
             P{Number(stats.expectedReturn || 0).toLocaleString(undefined, {
+              minimumFractionDigits: 2,
+              maximumFractionDigits: 2
+            })}
+          </p>
+        </div>
+        <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
+          <p className="text-sm text-gray-500 mb-1">Commission Paid to PulaLend</p>
+          <p className="text-3xl font-bold text-purple-600">
+            P{Number(portfolio.totalCommission || 0).toLocaleString(undefined, {
               minimumFractionDigits: 2,
               maximumFractionDigits: 2
             })}

@@ -85,7 +85,12 @@ export default function AdminDashboardPage() {
   if (!user || loading) return null;
 
   return (
-    <DashboardLayout userType="admin" navItems={navItems} title="Admin Dashboard">
+    <DashboardLayout 
+      userType="admin" 
+      navItems={navItems} 
+      title="Admin Dashboard"
+      commissionAmount={stats?.investments.totalCommissionEarned}
+    >
       <div className="mb-8">
         <h2 className="text-2xl font-bold text-navy-deep">Welcome, {user.firstName}!</h2>
         <p className="text-gray-600">Platform Overview & Control Center</p>
@@ -217,20 +222,42 @@ export default function AdminDashboardPage() {
         </div>
       </div>
 
-      <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 mb-8">
-        <div className="flex items-center justify-between mb-2">
-          <h3 className="text-sm font-semibold text-gray-600">Platform Commission (2%)</h3>
-          <span className="text-xs bg-green-100 text-green-700 px-2 py-1 rounded-full font-medium">
-            Active
-          </span>
+      <div className="bg-gradient-to-r from-green-600 to-emerald-600 rounded-xl shadow-lg p-6 mb-8 text-white">
+        <div className="flex items-center justify-between">
+          <div className="flex-1">
+            <div className="flex items-center gap-2 mb-2">
+              <h3 className="text-lg font-semibold">Platform Commission (2%)</h3>
+              <span className="text-xs bg-white/20 backdrop-blur-sm px-2 py-1 rounded-full font-medium">
+                Active
+              </span>
+            </div>
+            <div className="text-4xl font-bold mb-3">
+              P{Number(stats?.investments.totalCommissionEarned || 0).toLocaleString(undefined, {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2,
+              })}
+            </div>
+            <div className="grid grid-cols-3 gap-4 text-sm">
+              <div>
+                <p className="text-white/70">Total Invested</p>
+                <p className="font-semibold">P{Number(stats?.investments.totalAmount || 0).toLocaleString()}</p>
+              </div>
+              <div>
+                <p className="text-white/70">Commission (2%)</p>
+                <p className="font-semibold">P{Number(stats?.investments.totalCommissionEarned || 0).toLocaleString()}</p>
+              </div>
+              <div>
+                <p className="text-white/70">Net to Borrowers</p>
+                <p className="font-semibold">P{Number((stats?.investments.totalAmount || 0) - (stats?.investments.totalCommissionEarned || 0)).toLocaleString()}</p>
+              </div>
+            </div>
+          </div>
+          <div className="hidden md:block">
+            <svg className="w-20 h-20 text-white/20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+          </div>
         </div>
-        <div className="text-3xl font-bold text-navy-deep">
-          P{Number(stats?.investments.totalCommissionEarned || 0).toLocaleString(undefined, {
-            minimumFractionDigits: 2,
-            maximumFractionDigits: 2,
-          })}
-        </div>
-        <p className="text-sm text-gray-500 mt-1">Total earned from lender funding commission</p>
       </div>
 
       <div className="grid md:grid-cols-2 gap-6">

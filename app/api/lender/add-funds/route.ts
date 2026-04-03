@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import pool from "@/lib/db";
 import { RowDataPacket } from "mysql2";
+import { EmailService } from "@/lib/emailService";
 
 export async function POST(request: NextRequest) {
   try {
@@ -23,7 +24,7 @@ export async function POST(request: NextRequest) {
 
     // Verify user is a lender
     const [userRows] = await pool.execute<RowDataPacket[]>(
-      "SELECT id, user_type FROM users WHERE id = ?",
+      "SELECT id, user_type, email, first_name, last_name FROM users WHERE id = ?",
       [lenderId]
     );
 
@@ -34,6 +35,8 @@ export async function POST(request: NextRequest) {
     if (userRows[0].user_type !== "lender") {
       return NextResponse.json({ error: "Only lenders can add funds" }, { status: 403 });
     }
+
+    const user = userRows[0];
 
     // Start transaction
     const connection = await pool.getConnection();
@@ -74,10 +77,19 @@ export async function POST(request: NextRequest) {
 
       connection.release();
 
+      const newBalance = Number(balanceRows[0]?.available_balance || 0);
+
+      // Send email notification (async, don't wait)
+      EmailService.sendFundDepositConfirmation(
+        user.email,
+        `${user.first_name} ${user.last_name}`,
+        depositAmount
+      ).catch(err => console.error('Email send error:', err));
+
       return NextResponse.json({
         success: true,
         message: "Funds added successfully",
-        newBalance: Number(balanceRows[0]?.available_balance || 0),
+        newBalance,
       });
     } catch (error) {
       await connection.rollback();
