@@ -365,37 +365,39 @@ export default function BorrowerDashboard() {
               </Link>
             </div>
           ) : (
-            <table className="w-full">
-              <thead>
-                <tr className="text-left text-sm text-gray-500">
-                  <th className="pb-3">Loan ID</th>
-                  <th className="pb-3">Amount</th>
-                  <th className="pb-3">Status</th>
-                  <th className="pb-3">Date</th>
-                </tr>
-              </thead>
-              <tbody>
-                {loans.map((loan) => (
-                  <tr key={loan.id} className="border-t border-gray-50">
-                    <td className="py-3 font-medium">#{loan.id}</td>
-                    <td className="py-3">P{loan.amount.toLocaleString()}</td>
-                    <td className="py-3">
-                      <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                        loan.status === "active" ? "bg-green-100 text-green-700" :
-                        loan.status === "pending" ? "bg-yellow-100 text-yellow-700" :
-                        loan.status === "completed" ? "bg-blue-100 text-blue-700" :
-                        "bg-gray-100 text-gray-700"
-                      }`}>
-                        {loan.status}
-                      </span>
-                    </td>
-                    <td className="py-3 text-gray-500">
-                      {new Date(loan.requestedAt).toLocaleDateString()}
-                    </td>
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead>
+                  <tr className="text-left text-sm text-gray-500">
+                    <th className="pb-3">Loan ID</th>
+                    <th className="pb-3">Amount</th>
+                    <th className="pb-3">Status</th>
+                    <th className="pb-3">Date</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody>
+                  {loans.map((loan) => (
+                    <tr key={loan.id} className="border-t border-gray-50">
+                      <td className="py-3 font-medium">#{loan.id}</td>
+                      <td className="py-3">P{loan.amount.toLocaleString()}</td>
+                      <td className="py-3">
+                        <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                          loan.status === "active" ? "bg-green-100 text-green-700" :
+                          loan.status === "pending" ? "bg-yellow-100 text-yellow-700" :
+                          loan.status === "completed" ? "bg-blue-100 text-blue-700" :
+                          "bg-gray-100 text-gray-700"
+                        }`}>
+                          {loan.status}
+                        </span>
+                      </td>
+                      <td className="py-3 text-gray-500">
+                        {new Date(loan.requestedAt).toLocaleDateString()}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           )}
         </div>
       </div>
